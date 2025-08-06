@@ -182,3 +182,11 @@ def get_aspect_ratings(reviews_df):
         'all_time': all_time,
         'last_3_months': last_3m
     }
+
+def get_ai_insights():
+    """Return simplified AI insights with main strength, weakness and summary."""
+    return {
+        'main_strength': 'Qualità del cibo eccellente, con un rating medio di 4.8/5 per la categoria "Cibo"',
+        'main_weakness': 'Tempi di attesa elevati nelle ore di punta (>45 min)',
+        'summary': 'Il locale mantiene un ottimo standard qualitativo ma potrebbe migliorare l\'efficienza del servizio per ridurre i tempi di attesa.'
+    }

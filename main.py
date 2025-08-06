@@ -2,7 +2,7 @@ import config  # Must be the very first import
 import streamlit as st
 from streamlit_echarts import st_echarts
 import pandas as pd
-from data_mock import get_all_reviews, get_mock_competitors, get_historical_data, get_recent_rating, get_recent_reviews, get_aspect_ratings
+from data_mock import get_all_reviews, get_mock_competitors, get_historical_data, get_recent_rating, get_recent_reviews, get_aspect_ratings, get_ai_insights
 
 # Add custom CSS for better tab styling
 st.markdown("""
@@ -65,6 +65,65 @@ st.markdown("""
     .review-card.negative {
         background-color: #fff5f5;
     }
+
+    .ai-card {
+        background-color: #F0F2F6;
+        border-radius: 10px;
+        padding: 0.5rem 1.5rem 1.5rem 1.5rem; /* top right bottom left */
+        margin-bottom: 2rem;
+    }
+
+    .ai-header {
+        color: #1E3D59;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .suggestion-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 6px;
+        margin: 0.5rem 0;
+        border: 1px solid #e6e9ef;
+    }
+    .suggestion-priority {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+    }
+    .priority-alta {
+        background-color: #ffe4e4;
+        color: #cf0000;
+    }
+    .priority-media {
+        background-color: #fff4e4;
+        color: #b25000;
+    }
+    .priority-alta.strength {
+        background-color: #e4ffe4;
+        color: #008000;
+    }
+    
+    .priority-alta.summary {
+        background-color: #e4f1ff;
+        color: #0066cc;
+    }
+
+    .analysis-text {
+        background: white;
+        padding: 1.2rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+        border: 1px solid #e6e9ef;
+        line-height: 1.6;
+        white-space: pre-line;
+    }
+    
     </style>
 """, unsafe_allow_html=True)
 
@@ -78,6 +137,28 @@ ratings_history, prices_history = get_historical_data()
 tab1, tab2 = st.tabs(["📊 La mia performance", "📈 Analisi Competitiva"])
 
 with tab1:
+    # Get AI insights
+    insights = get_ai_insights()
+    
+    # Display simplified AI insights card
+    st.markdown(f"""
+    <div class="ai-card">
+        <h2>💡 Analisi AI</h2>
+        <div class="suggestion-card">
+            <div class="suggestion-priority priority-alta strength">💪 Punto di Forza</div>
+            <p>{insights['main_strength']}</p>
+        </div>
+        <div class="suggestion-card">
+            <div class="suggestion-priority priority-media">⚠️ Punto Debole</div>
+            <p>{insights['main_weakness']}</p>
+        </div>
+        <div class="suggestion-card">
+            <div class="suggestion-priority priority-alta summary">📑 Sommario</div>
+            <p>{insights['summary']}</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
     st.header("📊 Indicatori principali")
     
     # Get data for "La Mia Pizzeria"
@@ -176,9 +257,11 @@ with tab1:
             delta_color="normal"
         )
 
+    st.empty().markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
+    
     # Add Aspect Ratings Chart
     st.markdown("<div class='kpi-section-title'>📊 Valutazione per Categoria</div>", unsafe_allow_html=True)
- 
+    st.empty().markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
     reviews = get_all_reviews()
     aspect_ratings = get_aspect_ratings(reviews)
     
@@ -187,15 +270,19 @@ with tab1:
         "tooltip": {"trigger": "axis"},
         "legend": {
             "data": ["Media Storica", "Ultimi 3 mesi"],
-            "orient": "vertical",
-            "left": "left",
-            "top": "middle"
+            "orient": "horizontal",  # Change to horizontal orientation
+            "left": "center",       # Center the legend
+            "top": "top",          # Place at the top
+            "textStyle": {
+                "fontSize": 16
+            },
+            "padding": [0, 0, 10, 0]  # Add padding below legend
         },
         "grid": {
-            "left": "15%",
-            "right": "4%",
-            "top": "10%",
-            "bottom": "0%",
+            "left": "10%",
+            "right": "10%",
+            "top": "15%",          # Increase top margin to accommodate legend
+            "bottom": "3%",
             "containLabel": True
         },
         "xAxis": {
@@ -203,7 +290,10 @@ with tab1:
             "data": ["Cibo", "Servizio", "Ambiente"],
             "axisLabel": {
                 "interval": 0,
-                "fontSize": 12
+                "fontSize": 16  # Match website font size
+            },
+            "axisTick": {
+                "alignWithLabel": True
             }
         },
         "yAxis": {
@@ -213,7 +303,13 @@ with tab1:
             "interval": 1,
             "name": "Rating",
             "nameLocation": "middle",
-            "nameGap": 30
+            "nameGap": 30,
+            "nameTextStyle": {
+                "fontSize": 16  # Match website font size
+            },
+            "axisLabel": {
+                "fontSize": 16  # Match website font size
+            }
         },
         "series": [
             {
@@ -227,7 +323,8 @@ with tab1:
                 "label": {
                     "show": True,
                     "position": "top",
-                    "formatter": "{c}"
+                    "formatter": "{c}",
+                    "fontSize": 16  # Match website font size
                 },
                 "itemStyle": {
                     "color": "#5470c6"
@@ -244,11 +341,13 @@ with tab1:
                 "label": {
                     "show": True,
                     "position": "top",
-                    "formatter": "{c}"
+                    "formatter": "{c}",
+                    "fontSize": 16  # Match website font size
                 },
                 "itemStyle": {
-                    "color": "rgba(84, 112, 198, 0.6)"  # Changed from "#91cc75" to add transparency
-                }
+                    "color": "rgba(84, 112, 198, 0.6)"
+                },
+                "barGap": "10%"  # Decrease spacing between bars in a pair
             }
         ]
     }
@@ -397,4 +496,11 @@ with tab2:
         st_echarts(options=prices_options, height="400px")
 
 
+# Footer
+st.markdown("""
+    <hr style="margin-top: 2rem; margin-bottom: 1rem;">
+    <div style="text-align: center; font-size: 0.9rem; color: #999;">
+        © 2025 Pizza Radar • Dashboard realizzata con ❤️ da Carpi (Modena)
+    </div>
+""", unsafe_allow_html=True)
 
