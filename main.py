@@ -163,15 +163,16 @@ with tab1:
     
     # Get data for "La Mia Pizzeria"
     my_pizzeria = competitors_df[competitors_df['Nome'] == 'La Mia Pizzeria'].iloc[0]
-    numeric_columns = ['Prezzo Margherita', 'Rating', 'Recensioni', 'Menu Items', 
-                      'Prezzo Medio Menu', 'Tempo Permanenza Max']
+    numeric_columns = ['Prezzo Margherita', 'avgRating', 'avgRatingCibo', 'avgRatingServizio', 
+                      'avgRatingAtmosfera', 'Recensioni', 'Menu Items', 
+                      'Prezzo Medio Menu', 'Tempo Attesa Max']
     competitors_avg = competitors_df[competitors_df['Nome'] != 'La Mia Pizzeria'][numeric_columns].mean()
 
     # 1. KPI Section with comparison
 
     # Calculate percentile ranks
     price_percentile = (competitors_df['Prezzo Margherita'] > my_pizzeria['Prezzo Margherita']).mean() * 100
-    rating_percentile = (competitors_df['Rating'] < my_pizzeria['Rating']).mean() * 100
+    rating_percentile = (competitors_df['avgRating'] < my_pizzeria['avgRating']).mean() * 100
     menu_percentile = (competitors_df['Menu Items'] < my_pizzeria['Menu Items']).mean() * 100
 
     # Add section titles with custom styling
@@ -203,7 +204,7 @@ with tab1:
     with row1_col1:
         price_diff = my_pizzeria['Prezzo Margherita'] - competitors_avg['Prezzo Margherita']
         st.metric(
-            "💰 Prezzo Margherita",
+            "🌼 Prezzo Margherita",
             f"€{my_pizzeria['Prezzo Margherita']:.2f}",
             f"{price_diff:+.2f}€ vs media competitor",
             delta_color="inverse"
@@ -220,9 +221,9 @@ with tab1:
     with row1_col3:
         all_reviews = get_all_reviews()
         overall_rating = all_reviews['Rating'].mean()
-        rating_diff = overall_rating - competitors_avg['Rating']  # Keep original diff calculation
+        rating_diff = overall_rating - competitors_avg['avgRating']  # Keep original diff calculation
         st.metric(
-            "⭐ Rating",
+            "⭐ Valutazione",
             f"{overall_rating:.1f}",
             f"{rating_diff:+.1f} vs media competitor"
         )
@@ -238,20 +239,20 @@ with tab1:
         )
 
     with row2_col2:
-        time_diff = my_pizzeria['Tempo Permanenza Max'] - competitors_avg['Tempo Permanenza Max']
+        time_diff = my_pizzeria['Tempo Attesa Max'] - competitors_avg['Tempo Attesa Max']
         st.metric(
-            "⏱️ Permanenza Max",
-            f"{int(my_pizzeria['Tempo Permanenza Max'])}h",
-            f"{int(time_diff):+d}h vs media competitor",
+            "⏱️ Tempo Attesa Max",
+            f"{int(my_pizzeria['Tempo Attesa Max'])} min",
+            f"{int(time_diff):+d} min vs media competitor",
             delta_color="inverse"
         )
 
     with row2_col3:
         recent_reviews = get_recent_reviews()
         recent_rating = recent_reviews['Rating'].mean()
-        recent_rating_diff = recent_rating - competitors_avg['Rating']  # Keep original diff calculation
+        recent_rating_diff = recent_rating - competitors_avg['avgRating']  # Keep original diff calculation
         st.metric(
-            "✨ Rating ultimi 3 mesi",
+            "✨ Valutazione ultimi 3 mesi",
             f"{recent_rating:.1f}",
             f"{recent_rating_diff:+.1f} vs media competitor",
             delta_color="normal"
@@ -260,40 +261,55 @@ with tab1:
     st.empty().markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
     
     # Add Aspect Ratings Chart
-    st.markdown("<div class='kpi-section-title'>📊 Valutazione per Categoria</div>", unsafe_allow_html=True)
+        # Add Ratings Trend Chart
+    st.markdown("<div class='kpi-section-title'>📈 Trend Valutazioni</div>", unsafe_allow_html=True)
     st.empty().markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
+
+    # Get reviews and calculate moving averages
     reviews = get_all_reviews()
-    aspect_ratings = get_aspect_ratings(reviews)
+    reviews['Data'] = pd.to_datetime(reviews['Data'])
     
-    # Create ECharts bar chart options with improved formatting
+    # Filter for last year only
+    one_year_ago = pd.Timestamp.now() - pd.DateOffset(years=1)
+    reviews = reviews[reviews['Data'] >= one_year_ago]
+    
+    # Resample to weekly data points and calculate 1-month moving average
+    window = '30D'  # 1 month window
+    moving_avgs = pd.DataFrame()
+    for col in ['Rating', 'Cibo', 'Servizio', 'Ambiente']:
+        # First resample to weekly averages
+        weekly_data = reviews.groupby('Data')[col].mean().resample('W').mean()
+        # Then calculate 1-month moving average
+        moving_avgs[col] = weekly_data.rolling(window, min_periods=1).mean()
+
+    # Create line chart options with same configuration but updated data
     options = {
-        "tooltip": {"trigger": "axis"},
+        "tooltip": {
+            "trigger": "axis",
+            "formatter": "{b}<br/>{a}: {c}"
+        },
         "legend": {
-            "data": ["Media Storica", "Ultimi 3 mesi"],
-            "orient": "horizontal",  # Change to horizontal orientation
-            "left": "center",       # Center the legend
-            "top": "top",          # Place at the top
-            "textStyle": {
-                "fontSize": 16
-            },
-            "padding": [0, 0, 10, 0]  # Add padding below legend
+            "data": ["Rating Generale", "Cibo", "Servizio", "Ambiente"],
+            "orient": "horizontal",
+            "left": "center",
+            "top": "top",
+            "textStyle": {"fontSize": 16}
         },
         "grid": {
-            "left": "10%",
-            "right": "10%",
-            "top": "15%",          # Increase top margin to accommodate legend
+            "left": "3%",
+            "right": "4%",
             "bottom": "3%",
+            "top": "15%",
             "containLabel": True
         },
         "xAxis": {
             "type": "category",
-            "data": ["Cibo", "Servizio", "Ambiente"],
+            "boundaryGap": False,
+            "data": [d.strftime('%m/%Y') for d in moving_avgs.index],  # Changed date format
             "axisLabel": {
-                "interval": 0,
-                "fontSize": 16  # Match website font size
-            },
-            "axisTick": {
-                "alignWithLabel": True
+                "fontSize": 14,
+                "rotate": 45,
+                "interval": 4  # Adjusted to show fewer labels for better readability
             }
         },
         "yAxis": {
@@ -301,67 +317,62 @@ with tab1:
             "min": 0,
             "max": 5,
             "interval": 1,
-            "name": "Rating",
-            "nameLocation": "middle",
-            "nameGap": 30,
-            "nameTextStyle": {
-                "fontSize": 16  # Match website font size
-            },
-            "axisLabel": {
-                "fontSize": 16  # Match website font size
-            }
+            "axisLabel": {"fontSize": 14}
         },
         "series": [
             {
-                "name": "Media Storica",
-                "type": "bar",
-                "data": [
-                    round(aspect_ratings['all_time']['Cibo'], 1),
-                    round(aspect_ratings['all_time']['Servizio'], 1),
-                    round(aspect_ratings['all_time']['Ambiente'], 1)
-                ],
-                "label": {
-                    "show": True,
-                    "position": "top",
-                    "formatter": "{c}",
-                    "fontSize": 16  # Match website font size
-                },
-                "itemStyle": {
-                    "color": "#5470c6"
-                }
+                "name": "Rating Generale",
+                "type": "line",
+                "data": moving_avgs['Rating'].round(2).tolist(),
+                "smooth": True,
+                "symbol": "circle",  # Show data points
+                "symbolSize": 6,     # Size of data points
+                "lineStyle": {"width": 2},
+                "itemStyle": {"color": "#5470c6"}
             },
             {
-                "name": "Ultimi 3 mesi",
-                "type": "bar",
-                "data": [
-                    round(aspect_ratings['last_3_months']['Cibo'], 1),
-                    round(aspect_ratings['last_3_months']['Servizio'], 1),
-                    round(aspect_ratings['last_3_months']['Ambiente'], 1)
-                ],
-                "label": {
-                    "show": True,
-                    "position": "top",
-                    "formatter": "{c}",
-                    "fontSize": 16  # Match website font size
-                },
-                "itemStyle": {
-                    "color": "rgba(84, 112, 198, 0.6)"
-                },
-                "barGap": "10%"  # Decrease spacing between bars in a pair
+                "name": "Cibo",
+                "type": "line",
+                "data": moving_avgs['Cibo'].round(2).tolist(),
+                "smooth": True,
+                "symbol": "circle",
+                "symbolSize": 6,
+                "lineStyle": {"width": 2},
+                "itemStyle": {"color": "#91cc75"}
+            },
+            {
+                "name": "Servizio",
+                "type": "line",
+                "data": moving_avgs['Servizio'].round(2).tolist(),
+                "smooth": True,
+                "symbol": "circle",
+                "symbolSize": 6,
+                "lineStyle": {"width": 2},
+                "itemStyle": {"color": "#fac858"}
+            },
+            {
+                "name": "Ambiente",
+                "type": "line",
+                "data": moving_avgs['Ambiente'].round(2).tolist(),
+                "smooth": True,
+                "symbol": "circle",
+                "symbolSize": 6,
+                "lineStyle": {"width": 2},
+                "itemStyle": {"color": "#ee6666"}
             }
         ]
     }
-    
-    # Render the chart
-    st_echarts(options=options, height="300px")
 
-    # Add Reviews Section with pagination
+    # Render the chart
+    st_echarts(options=options, height="400px")
+
+    # Add Reviews Section
     st.header("📝 Ultime Recensioni")
     
+    # Get recent reviews and sort by date
     reviews = get_recent_reviews()
-    positive_reviews = reviews[reviews['Rating'] >= 3]
-    negative_reviews = reviews[reviews['Rating'] < 3]
-    items_per_page = 3
+    positive_reviews = reviews[reviews['Rating'] >= 3].sort_values('Data', ascending=False).head(3)
+    negative_reviews = reviews[reviews['Rating'] < 3].sort_values('Data', ascending=False).head(3)
     
     # Create columns for section titles
     rev_col1, rev_col2 = st.columns(2)
@@ -369,15 +380,8 @@ with tab1:
     with rev_col1:
         st.markdown("<div class='kpi-section-title'>✨ Recensioni Positive</div>", unsafe_allow_html=True)
         
-        # Calculate pagination for positive reviews
-        num_pages_pos = max(1, len(positive_reviews) // items_per_page + (1 if len(positive_reviews) % items_per_page > 0 else 0))
-        page_pos = st.number_input('Pagina', min_value=1, max_value=num_pages_pos, value=1, key='pos_page')
-        
-        start_idx_pos = (page_pos - 1) * items_per_page
-        end_idx_pos = min(start_idx_pos + items_per_page, len(positive_reviews))
-        
-        # Display positive reviews
-        for _, review in positive_reviews.iloc[start_idx_pos:end_idx_pos].iterrows():
+        # Display latest 3 positive reviews
+        for _, review in positive_reviews.iterrows():
             st.markdown(f"""
                 <div class="review-card">
                     <div class="review-header">
@@ -397,15 +401,8 @@ with tab1:
     with rev_col2:
         st.markdown("<div class='kpi-section-title'>⚠️ Recensioni Negative</div>", unsafe_allow_html=True)
         
-        # Calculate pagination for negative reviews
-        num_pages_neg = max(1, len(negative_reviews) // items_per_page + (1 if len(negative_reviews) % items_per_page > 0 else 0))
-        page_neg = st.number_input('Pagina', min_value=1, max_value=num_pages_neg, value=1, key='neg_page')
-        
-        start_idx_neg = (page_neg - 1) * items_per_page
-        end_idx_neg = min(start_idx_neg + items_per_page, len(negative_reviews))
-        
-        # Display negative reviews
-        for _, review in negative_reviews.iloc[start_idx_neg:end_idx_neg].iterrows():
+        # Display latest 3 negative reviews
+        for _, review in negative_reviews.iterrows():
             st.markdown(f"""
                 <div class="review-card negative">
                     <div class="review-header">
@@ -425,75 +422,176 @@ with tab1:
 with tab2:
     # Competitors Table
     st.header("🏆 Confronto Competitors")
-    styled_df = competitors_df.style.format({
-        'Prezzo Margherita': '€{:.2f}',
-        'Rating': '{:.1f}'
-    })
-    st.dataframe(styled_df, use_container_width=True)
     
+    # Create a copy and select only the columns we want to display
+    display_columns = ['Nome', 'avgRating', 'avgRatingCibo', 'avgRatingServizio', 'avgRatingAtmosfera', 
+                       'Menu Items', 'Prezzo Margherita', 'Prezzo Medio Menu']
+    display_df = competitors_df[display_columns].copy()
+    
+    # Rename columns with numbers
+    renamed_df = display_df.copy()
+    renamed_df.columns = [str(i+1) for i in range(len(display_df.columns))]
+    
+    # Function to highlight the best value
+    def highlight_best(s, is_inverse=False):
+        if is_inverse:
+            is_best = s == s.min()
+        else:
+            is_best = s == s.max()
+        return ['background-color: #FBF719; font-weight: bold' if v else '' for v in is_best]
+
+    # Apply styling to the display dataframe
+    styled_df = display_df.copy()
+    styled_df = styled_df.style\
+        .apply(highlight_best, subset=['avgRating', 'avgRatingCibo', 'avgRatingServizio', 'avgRatingAtmosfera', 'Menu Items'])\
+        .format({
+            'Prezzo Margherita': '€{:.2f}',
+            'Prezzo Medio Menu': '€{:.2f}',
+            'avgRating': '{:.1f}',
+            'avgRatingCibo': '{:.1f}',
+            'avgRatingServizio': '{:.1f}',
+            'avgRatingAtmosfera': '{:.1f}',
+        })
+
+    # Display the styled dataframe
+    st.dataframe(
+        styled_df,
+        height=300,
+        column_config={
+            "Nome": st.column_config.Column("Nome"),
+            "avgRating": st.column_config.NumberColumn("Generale ⭐️", format="%.1f"),
+            "avgRatingCibo": st.column_config.NumberColumn("Cibo 🍕", format="%.1f"),
+            "avgRatingServizio": st.column_config.NumberColumn("Servizio 👨‍🍳", format="%.1f"),
+            "avgRatingAtmosfera": st.column_config.NumberColumn("Ambiente 🏠", format="%.1f"),
+            "Menu Items": st.column_config.NumberColumn("Pizze nel Menu"),
+            "Prezzo Margherita": st.column_config.NumberColumn("Prezzo Margherita", format="€%.2f"),
+            "Prezzo Medio Menu": st.column_config.NumberColumn("Prezzo Medio Pizza", format="€%.2f"),
+        },
+        use_container_width=True
+    )
+
     # Trend Charts
     st.header("📈 Analisi Temporale")
-    col1, col2 = st.columns(2)
     
-    with col1:
-        # Prepare data for ratings chart
-        dates = ratings_history['Data'].unique()
-        pizzerias = ratings_history['Pizzeria'].unique()
-        
-        ratings_options = {
-            "title": {"text": "Andamento Rating (ultimi 6 mesi)"},
-            "tooltip": {"trigger": "axis"},
-            "legend": {"data": list(pizzerias)},
-            "grid": {"left": "3%", "right": "4%", "bottom": "3%", "containLabel": True},
-            "xAxis": {
-                "type": "category",
-                "boundaryGap": False,
-                "data": [d.strftime('%Y-%m-%d') for d in dates]
-            },
-            "yAxis": {
-                "type": "value",
-                "min": 3.5,
-                "max": 5,
-                "interval": 0.5
-            },
-            "series": [
-                {
-                    "name": pizzeria,
-                    "type": "line",
-                    "data": ratings_history[ratings_history['Pizzeria'] == pizzeria]['Rating'].tolist()
-                } for pizzeria in pizzerias
-            ]
-        }
-        st_echarts(options=ratings_options, height="400px")
+    # Prepare data for ratings chart
+    dates = ratings_history['Data'].unique()
+    pizzerias = competitors_df['Nome'].unique()
+    
+    # First chart - Ratings
+    st.markdown("<div class='kpi-section-title'>📈 Trend Valutazioni</div>", unsafe_allow_html=True)
+    st.empty().markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
+    
+    ratings_options = {
+        "tooltip": {
+            "trigger": "axis",
+            "formatter": "{b}<br/>{a}: {c}"
+        },
+        "legend": {
+            "data": list(pizzerias),
+            "type": "scroll",  # Make legend scrollable
+            "orient": "horizontal",
+            "left": "center",
+            "top": "top",
+            "textStyle": {"fontSize": 14},
+            "pageButtonPosition": "end"
+        },
+        "grid": {
+            "left": "3%",
+            "right": "4%",
+            "bottom": "3%",
+            "top": "15%",
+            "containLabel": True
+        },
+        "xAxis": {
+            "type": "category",
+            "boundaryGap": False,
+            "data": [d.strftime('%m/%Y') for d in ratings_history['Data'].unique()],
+            "axisLabel": {
+                "fontSize": 14,
+                "rotate": 45,
+                "interval": 4
+            }
+        },
+        "yAxis": {
+            "type": "value",
+            "min": 0,
+            "max": 5,
+            "interval": 0.5,
+            "axisLabel": {"fontSize": 14}
+        },
+        "series": [
+            {
+                "name": pizzeria,
+                "type": "line",
+                "data": ratings_history[ratings_history['Pizzeria'] == pizzeria]['Rating'].tolist(),
+                "smooth": True,
+                "symbol": "circle",
+                "symbolSize": 6,
+                "lineStyle": {"width": 2}
+            } for pizzeria in pizzerias
+        ]
+    }
+    st_echarts(options=ratings_options, height="400px")
 
-    with col2:
-        # Prepare data for prices chart
-        prices_options = {
-            "title": {"text": "Variazione Prezzo Margherita (ultimi 6 mesi)"},
-            "tooltip": {"trigger": "axis"},
-            "legend": {"data": list(pizzerias)},
-            "grid": {"left": "3%", "right": "4%", "bottom": "3%", "containLabel": True},
-            "xAxis": {
-                "type": "category",
-                "boundaryGap": False,
-                "data": [d.strftime('%Y-%m-%d') for d in dates]
-            },
-            "yAxis": {
-                "type": "value",
-                "name": "€",
-                "min": 7,
-                "max": 10,
-                "interval": 0.5
-            },
-            "series": [
-                {
-                    "name": pizzeria,
-                    "type": "line",
-                    "data": prices_history[prices_history['Pizzeria'] == pizzeria]['Prezzo'].tolist()
-                } for pizzeria in pizzerias
-            ]
-        }
-        st_echarts(options=prices_options, height="400px")
+    # Add spacing between charts
+    st.empty().markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
+
+    # Second chart - Prices
+    st.markdown("<div class='kpi-section-title'>💰 Trend Prezzi</div>", unsafe_allow_html=True)
+    st.empty().markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
+    
+    prices_options = {
+        "tooltip": {
+            "trigger": "axis",
+            "formatter": "{b}<br/>{a}: €{c}"
+        },
+        "legend": {
+            "data": list(pizzerias),
+            "type": "scroll",  # Make legend scrollable
+            "orient": "horizontal",
+            "left": "center",
+            "top": "top",
+            "textStyle": {"fontSize": 14},
+            "pageButtonPosition": "end"
+        },
+        "grid": {
+            "left": "3%",
+            "right": "4%",
+            "bottom": "3%",
+            "top": "15%",
+            "containLabel": True
+        },
+        "xAxis": {
+            "type": "category",
+            "boundaryGap": False,
+            "data": [d.strftime('%m/%Y') for d in dates],
+            "axisLabel": {
+                "fontSize": 14,
+                "rotate": 45,
+                "interval": 4
+            }
+        },
+        "yAxis": {
+            "type": "value",
+            "name": "€",
+            "min": 7,
+            "max": 10,
+            "interval": 0.5,
+            "axisLabel": {"fontSize": 14}
+        },
+        "series": [
+            {
+                "name": pizzeria,
+                "type": "line",
+                "data": prices_history[prices_history['Pizzeria'] == pizzeria]['Prezzo'].tolist(),
+                "smooth": True,
+                "symbol": "circle",
+                "symbolSize": 6,
+                "lineStyle": {"width": 2}
+            } for pizzeria in pizzerias
+        ]
+    }
+    st_echarts(options=prices_options, height="400px")
 
 
 # Footer

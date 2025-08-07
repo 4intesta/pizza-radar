@@ -5,13 +5,18 @@ from datetime import datetime, timedelta
 def get_mock_competitors():
     """Generate mock data for competitors comparison"""
     data = {
-        'Nome': ['La Mia Pizzeria', 'Pizza Express', 'Napoli Corner', 'Pizza Hub'],
-        'Prezzo Margherita': [8.50, 9.00, 8.00, 7.50],
-        'Rating': [0, 4, 4.1, 3.9],
-        'Recensioni': [120, 85, 95, 150],
-        'Menu Items': [25, 20, 15, 30],
-        'Prezzo Medio Menu': [12.50, 13.00, 11.50, 10.50],
-        'Tempo Permanenza Max': [1.5, 2.0, 1.25, 1.75]  # Added new field (in hours)
+        'Nome': ['La Mia Pizzeria', 'Pizza Express', 'Napoli Corner', 'Pizza Hub', 
+                'Bella Napoli', 'Don Giovanni', 'Pizzeria Italia', 'Il Forno', 
+                'Il Forno1', 'Il Forno2', 'Il Forno3', 'Il Forno4'],
+        'Prezzo Margherita': [8.50, 9.00, 8.00, 7.50, 8.80, 9.50, 7.80, 8.30, 6, 6, 6, 6],
+        'avgRating': [0, 4.0, 4.1, 3.9, 4.3, 4.5, 3.8, 4.2, 4.0, 4.1, 4.2, 4.3],
+        'avgRatingCibo': [0, 4.2, 4.3, 4.0, 4.5, 4.6, 3.9, 4.3, 4.1, 4.2, 4.3, 4.4],
+        'avgRatingServizio': [0, 3.9, 4.0, 3.8, 4.2, 4.4, 3.7, 4.1, 3.9, 4.0, 4.1, 4.2],
+        'avgRatingAtmosfera': [0, 4.1, 4.0, 3.9, 4.3, 4.5, 3.8, 4.2, 4.0, 4.1, 4.2, 4.3],
+        'Recensioni': [120, 85, 95, 150, 200, 180, 90, 130, 50, 60, 70, 80],
+        'Menu Items': [25, 20, 15, 30, 22, 28, 18, 24, 10, 12, 14, 16],
+        'Prezzo Medio Menu': [12.50, 13.00, 11.50, 10.50, 13.50, 14.00, 11.00, 12.00, 9.0, 9.5, 10.0, 10.5],
+        'Tempo Attesa Max': [45, 60, 35, 50, 55, 65, 40, 45, 30, 35, 40, 45]  # Changed to minutes
     }
     return pd.DataFrame(data)
 
@@ -53,112 +58,38 @@ def get_recent_rating(ratings_df, pizzeria_name, months=3):
     return recent_data['Rating'].mean()
 
 def get_all_reviews():
-    """Generate all historical reviews with aspect ratings"""
-    reviews = [
-        # Recent reviews (last 3 months)
-        {
-            'Data': datetime.now() - timedelta(days=5),
-            'Rating': 4.5,
-            'Testo': "Pizza napoletana autentica, impasto perfetto! Servizio veloce e cordiale.",
-            'Autore': "Marco S.",
-            'Fonte': "Google",
-            'Cibo': 5.0,
-            'Servizio': 4.0,
-            'Ambiente': 4.5
-        },
-        {
-            'Data': datetime.now() - timedelta(days=12),
-            'Rating': 2.0,
-            'Testo': "Attesa troppo lunga nel weekend, pizza tiepida all'arrivo.",
-            'Autore': "Laura B.",
-            'Fonte': "Tripadvisor",
-            'Cibo': 2.5,
-            'Servizio': 1.5,
-            'Ambiente': 3.0
-        },
-        {
-            'Data': datetime.now() - timedelta(days=25),
-            'Rating': 5.0,
-            'Testo': "La migliore margherita della zona! Personale gentilissimo.",
-            'Autore': "Giuseppe R.",
-            'Fonte': "Deliveroo",
-            'Cibo': 5.0,
-            'Servizio': 5.0,
-            'Ambiente': 4.5
-        },
-        {
-            'Data': datetime.now() - timedelta(days=45),
-            'Rating': 4.0,
-            'Testo': "Ottimo rapporto qualità-prezzo, ambiente accogliente.",
-            'Autore': "Sofia M.",
-            'Fonte': "Google",
-            'Cibo': 4.0,
-            'Servizio': 4.0,
-            'Ambiente': 4.0
-        },
-        {
-            'Data': datetime.now() - timedelta(days=60),
-            'Rating': 3.5,
-            'Testo': "Pizza buona ma servizio lento nel weekend.",
-            'Autore': "Andrea B.",
-            'Fonte': "Tripadvisor",
-            'Cibo': 4.0,
-            'Servizio': 2.5,
-            'Ambiente': 3.5
-        },
-        {
-            'Data': datetime.now() - timedelta(days=80),
-            'Rating': 4.5,
-            'Testo': "Ingredienti di prima qualità, personale professionale.",
-            'Autore': "Elena P.",
-            'Fonte': "Google",
-            'Cibo': 5.0,
-            'Servizio': 4.0,
-            'Ambiente': 4.0
-        },
-        # Older reviews (3-6 months ago)
-        {
-            'Data': datetime.now() - timedelta(days=120),
-            'Rating': 3.5,
-            'Testo': "Buona pizza ma prezzi un po' alti per la zona.",
-            'Autore': "Luca M.",
-            'Fonte': "Deliveroo",
-            'Cibo': 4.0,
-            'Servizio': 3.5,
-            'Ambiente': 3.0
-        },
-        {
-            'Data': datetime.now() - timedelta(days=140),
-            'Rating': 1.5,
-            'Testo': "Esperienza deludente, tempi di attesa assurdi.",
-            'Autore': "Paolo F.",
-            'Fonte': "Tripadvisor",
-            'Cibo': 2.0,
-            'Servizio': 1.0,
-            'Ambiente': 2.5
-        },
-        {
-            'Data': datetime.now() - timedelta(days=160),
-            'Rating': 4.0,
-            'Testo': "Locale molto carino, pizza buona e personale attento.",
-            'Autore': "Chiara D.",
-            'Fonte': "Google",
-            'Cibo': 4.0,
-            'Servizio': 4.5,
-            'Ambiente': 4.5
-        },
-        {
-            'Data': datetime.now() - timedelta(days=180),
-            'Rating': 3.0,
-            'Testo': "Qualità altalenante, a volte ottima a volte così così.",
-            'Autore': "Roberto N.",
-            'Fonte': "Tripadvisor",
-            'Cibo': 3.0,
-            'Servizio': 3.5,
-            'Ambiente': 3.0
+    """Generate 3 years of historical reviews with aspect ratings"""
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365*3)
+    dates = pd.date_range(start=start_date, end=end_date, freq='D')
+    
+    # Base ratings with some randomness
+    base_ratings = {
+        'Rating': 3,
+        'Cibo': 3,
+        'Servizio': 3,
+        'Ambiente': 3
+    }
+    
+    reviews = []
+    for date in dates:
+        # Add some seasonality and random variation
+        seasonal_factor = 0.2 * np.sin(2 * np.pi * date.dayofyear / 365)
+        random_factor = np.random.normal(0, 0.3)
+        
+        review = {
+            'Data': date,
+            'Rating': min(5, max(1, base_ratings['Rating'] + seasonal_factor + random_factor)),
+            'Cibo': min(5, max(1, base_ratings['Cibo'] + seasonal_factor + np.random.normal(0, 0.2))),
+            'Servizio': min(5, max(1, base_ratings['Servizio'] + seasonal_factor + np.random.normal(0, 0.3))),
+            'Ambiente': min(5, max(1, base_ratings['Ambiente'] + seasonal_factor + np.random.normal(0, 0.2))),
+            'Autore': f"User_{np.random.randint(1000)}",
+            'Fonte': np.random.choice(['Google', 'Tripadvisor', 'Deliveroo']),
+            'Testo': "Review text"  # Simplified for this example
         }
-    ]
-    return pd.DataFrame(reviews).sort_values('Data', ascending=False)
+        reviews.append(review)
+    
+    return pd.DataFrame(reviews)
 
 def get_recent_reviews():
     """Retrieve only reviews from the last 3 months"""
