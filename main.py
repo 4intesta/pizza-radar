@@ -3,6 +3,7 @@ import streamlit as st
 from streamlit_echarts import st_echarts
 import pandas as pd
 from data_mock import get_all_reviews, get_mock_competitors, get_historical_data, get_recent_rating, get_recent_reviews, get_aspect_ratings, get_ai_insights
+import plotly.express as px
 
 # Add custom CSS for better tab styling
 st.markdown("""
@@ -469,6 +470,79 @@ with tab2:
         },
         use_container_width=True
     )
+
+        # Add map visualization
+    st.markdown("<div class='kpi-section-title'>📍 Mappa Competitors</div>", unsafe_allow_html=True)
+    
+    # Create map figure with improved hover and size legend
+    fig = px.scatter_mapbox(competitors_df,
+                           lat='lat',
+                           lon='lon',
+                           hover_name='Nome',
+                           hover_data={
+                               'avgRating': ':.1f',
+                               'avgRatingCibo': ':.1f',
+                               'avgRatingServizio': ':.1f',
+                               'avgRatingAtmosfera': ':.1f',
+                               'Prezzo Margherita': ':.2f€',
+                               'Recensioni': True,
+                               'lat': False,
+                               'lon': False
+                           },
+                           color='avgRating',
+                           size='Recensioni',
+                           size_max=25,
+                           zoom=14,
+                           color_continuous_scale='RdYlGn',
+                           labels={
+                               'avgRating': 'Rating Generale',
+                               'avgRatingCibo': 'Rating Cibo',
+                               'avgRatingServizio': 'Rating Servizio',
+                               'avgRatingAtmosfera': 'Rating Ambiente',
+                               'Prezzo Margherita': 'Prezzo Margherita',
+                               'Recensioni': 'Numero Recensioni'
+                           })
+
+    # Update layout with improved styling
+    fig.update_layout(
+        mapbox_style='carto-positron',
+        mapbox=dict(
+            center=dict(
+                lat=competitors_df['lat'].mean(),
+                lon=competitors_df['lon'].mean()
+            )
+        ),
+        margin=dict(r=0, t=0, l=0, b=0),
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=14,
+            font_family="Helvetica"
+        ),
+        coloraxis_colorbar=dict(
+            title="Rating",
+            tickformat=".1f",
+            len=0.5,
+            yanchor="top",
+            y=1,
+            xanchor="left",
+            x=0
+        )
+    )
+
+    # Update traces for better hover template
+    fig.update_traces(
+        hovertemplate="<b>%{hovertext}</b><br>" +
+                      "Rating Generale: %{customdata[0]:.1f}⭐<br>" +
+                      "Rating Cibo: %{customdata[1]:.1f}🍕<br>" +
+                      "Rating Servizio: %{customdata[2]:.1f}👨‍🍳<br>" +
+                      "Rating Ambiente: %{customdata[3]:.1f}🏠<br>" +
+                      "Prezzo Margherita: %{customdata[4]}<br>" +
+                      "Recensioni: %{customdata[5]}<extra></extra>"
+    )
+
+    # Display the map
+    st.plotly_chart(fig, use_container_width=True)
+
 
     # Trend Charts
     st.header("📈 Analisi Temporale")
