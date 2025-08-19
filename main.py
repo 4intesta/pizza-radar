@@ -2,8 +2,11 @@ import config  # Must be the very first import
 import streamlit as st
 from streamlit_echarts import st_echarts
 import pandas as pd
-from data_mock import get_all_reviews, get_mock_competitors, get_historical_data, get_recent_rating, get_recent_reviews, get_aspect_ratings, get_ai_insights
+from data_mock import (get_all_reviews, get_mock_competitors, get_historical_data, 
+                      get_recent_rating, get_recent_reviews, get_aspect_ratings, 
+                      get_ai_insights, get_opening_hours)  # Add this import
 import plotly.express as px
+import numpy as np
 
 # Add custom CSS for better tab styling
 st.markdown("""
@@ -141,24 +144,24 @@ with tab1:
     # Get AI insights
     insights = get_ai_insights()
     
-    # Display simplified AI insights card
-    st.markdown(f"""
-    <div class="ai-card">
-        <h2>💡 Analisi AI</h2>
-        <div class="suggestion-card">
-            <div class="suggestion-priority priority-alta strength">💪 Punto di Forza</div>
-            <p>{insights['main_strength']}</p>
+    # AI Insights section
+    with st.expander("💡 Analisi AI", expanded=True):
+        st.markdown(f"""
+        <div class="ai-card">
+            <div class="suggestion-card">
+                <div class="suggestion-priority priority-alta strength">💪 Punto di Forza</div>
+                <p>{insights['main_strength']}</p>
+            </div>
+            <div class="suggestion-card">
+                <div class="suggestion-priority priority-media">⚠️ Punto Debole</div>
+                <p>{insights['main_weakness']}</p>
+            </div>
+            <div class="suggestion-card">
+                <div class="suggestion-priority priority-alta summary">📑 Sommario</div>
+                <p>{insights['summary']}</p>
+            </div>
         </div>
-        <div class="suggestion-card">
-            <div class="suggestion-priority priority-media">⚠️ Punto Debole</div>
-            <p>{insights['main_weakness']}</p>
-        </div>
-        <div class="suggestion-card">
-            <div class="suggestion-priority priority-alta summary">📑 Sommario</div>
-            <p>{insights['summary']}</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     st.header("📊 Indicatori principali")
     
@@ -283,6 +286,12 @@ with tab1:
         # Then calculate 1-month moving average
         moving_avgs[col] = weekly_data.rolling(window, min_periods=1).mean()
 
+    # Calculate minimum value from the data and round down to nearest integer
+    min_rating = np.floor(min(moving_avgs['Rating'].min(),
+                            moving_avgs['Cibo'].min(),
+                            moving_avgs['Servizio'].min(),
+                            moving_avgs['Ambiente'].min()))
+
     # Create line chart options with same configuration but updated data
     options = {
         "tooltip": {
@@ -315,9 +324,10 @@ with tab1:
         },
         "yAxis": {
             "type": "value",
-            "min": 0,
+            "name": "valutazione",
+            "min": min_rating,
             "max": 5,
-            "interval": 1,
+            "interval": 0.5,
             "axisLabel": {"fontSize": 14}
         },
         "series": [
@@ -421,6 +431,20 @@ with tab1:
             """, unsafe_allow_html=True)
         
 with tab2:
+    # Get AI insights
+    insights = get_ai_insights()
+    
+    # AI Insights section
+    with st.expander("💡 Analisi AI", expanded=True):
+        st.markdown(f"""
+        <div class="ai-card">
+            <div class="suggestion-card">
+                <div class="suggestion-priority priority-alta strength">💪 Punto di Forza</div>
+                <p>{insights['main_strength']}</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
     # Competitors Table
     st.header("🏆 Confronto Competitors")
     
@@ -472,7 +496,7 @@ with tab2:
     )
 
         # Add map visualization
-    st.markdown("<div class='kpi-section-title'>📍 Mappa Competitors</div>", unsafe_allow_html=True)
+    st.markdown("<div class='kpi-section-title'>📍 Mappa</div>", unsafe_allow_html=True)
     
     # Create map figure with improved hover and size legend
     fig = px.scatter_mapbox(competitors_df,
@@ -543,10 +567,68 @@ with tab2:
     # Display the map
     st.plotly_chart(fig, use_container_width=True)
 
-
-    # Trend Charts
-    st.header("📈 Analisi Temporale")
+    st.markdown("<div class='kpi-section-title'>⏰ Orari settimanali</div>", unsafe_allow_html=True)
     
+    # Get opening hours
+    opening_hours = get_opening_hours()
+    
+    # Add CSS for the calendar
+    st.markdown("""
+        <style>
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: auto repeat(7, 1fr);
+            gap: 1px;
+            background-color: #f0f2f6;
+            padding: 1px;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        .calendar-header, .calendar-cell {
+            background: white;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .calendar-header {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .calendar-closed {
+            color: #dc3545;
+            font-style: italic;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Create calendar headers
+    days = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica']
+    
+    # Build calendar HTML
+    calendar_html = '<div class="calendar-grid">'
+    calendar_html += '<div class="calendar-header">Pizzeria</div>'
+    
+    # Add day headers
+    for day in days:
+        calendar_html += f'<div class="calendar-header">{day}</div>'
+    
+    # Add rows for each pizzeria
+    for pizzeria in opening_hours.keys():
+        calendar_html += f'<div class="calendar-cell">{pizzeria}</div>'
+        for day in days:
+            hours = opening_hours[pizzeria][day]
+            cell_class = 'calendar-cell calendar-closed' if hours == 'Chiuso' else 'calendar-cell'
+            calendar_html += f'<div class="{cell_class}">{hours}</div>'
+    
+    calendar_html += '</div>'
+    
+    # Display the calendar
+    st.markdown(calendar_html, unsafe_allow_html=True)
+    
+    # Add spacing after calendar
+    st.empty().markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
+
+    st.header("📈 Analisi Temporale")
     # Prepare data for ratings chart
     dates = ratings_history['Data'].unique()
     pizzerias = competitors_df['Nome'].unique()
@@ -554,6 +636,9 @@ with tab2:
     # First chart - Ratings
     st.markdown("<div class='kpi-section-title'>📈 Trend Valutazioni</div>", unsafe_allow_html=True)
     st.empty().markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
+    
+    # Calculate min rating from data
+    min_rating = np.floor(ratings_history['Rating'].min())
     
     ratings_options = {
         "tooltip": {
@@ -583,12 +668,13 @@ with tab2:
             "axisLabel": {
                 "fontSize": 14,
                 "rotate": 45,
-                "interval": 4
+                "interval": 0  # Changed to 0 to show all months
             }
         },
         "yAxis": {
             "type": "value",
-            "min": 0,
+            "name": "valutazione",
+            "min": min_rating,
             "max": 5,
             "interval": 0.5,
             "axisLabel": {"fontSize": 14}
@@ -613,6 +699,10 @@ with tab2:
     # Second chart - Prices
     st.markdown("<div class='kpi-section-title'>💰 Trend Prezzi</div>", unsafe_allow_html=True)
     st.empty().markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
+    
+    # Calculate min and max prices from data
+    min_price = np.floor(prices_history['Prezzo'].min())
+    max_price = np.ceil(prices_history['Prezzo'].max())
     
     prices_options = {
         "tooltip": {
@@ -642,14 +732,14 @@ with tab2:
             "axisLabel": {
                 "fontSize": 14,
                 "rotate": 45,
-                "interval": 4
+                "interval": 0  # Changed to 0 to show all months
             }
         },
         "yAxis": {
             "type": "value",
             "name": "€",
-            "min": 7,
-            "max": 10,
+            "min": min_price,
+            "max": max_price,
             "interval": 0.5,
             "axisLabel": {"fontSize": 14}
         },

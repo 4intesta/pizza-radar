@@ -29,7 +29,7 @@ def get_mock_competitors():
 def get_historical_data():
     """Generate mock historical data for trends"""
     end_date = datetime.now()
-    dates = pd.date_range(end=end_date, periods=6, freq='M')
+    dates = pd.date_range(end=end_date, periods=12, freq='M')
     pizzerias = ['La Mia Pizzeria', 'Pizza Express', 'Napoli Corner', 'Pizza Hub']
     
     # Generate ratings data
@@ -127,3 +127,29 @@ def get_ai_insights():
         'main_weakness': 'Tempi di attesa elevati nelle ore di punta (>45 min)',
         'summary': 'Il locale mantiene un ottimo standard qualitativo ma potrebbe migliorare l\'efficienza del servizio per ridurre i tempi di attesa.'
     }
+
+def get_opening_hours():
+    """Generate mock opening hours for pizzerias"""
+    pizzerias = get_mock_competitors()['Nome'].tolist()
+    days = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica']
+    
+    opening_hours = {}
+    for pizzeria in pizzerias:
+        # Default schedule
+        schedule = {
+            'Lunedì': '12:00-14:30, 19:00-23:00',
+            'Martedì': '12:00-14:30, 19:00-23:00',
+            'Mercoledì': '12:00-14:30, 19:00-23:00',
+            'Giovedì': '12:00-14:30, 19:00-23:00',
+            'Venerdì': '12:00-14:30, 19:00-23:30',
+            'Sabato': '19:00-23:30',
+            'Domenica': '19:00-23:00'
+        }
+        
+        # Some pizzerias are closed on Mondays
+        if np.random.random() < 0.3:
+            schedule['Lunedì'] = 'Chiuso'
+        
+        opening_hours[pizzeria] = schedule
+    
+    return opening_hours
