@@ -1,4 +1,3 @@
-import config  # Must be the very first import
 import streamlit as st
 from streamlit_echarts import st_echarts
 import pandas as pd
