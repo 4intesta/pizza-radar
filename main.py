@@ -5,12 +5,14 @@ import altair as alt
 import plotly.express as px
 import numpy as np
 from numpy.random import default_rng as rng
+from random import uniform
 
+import pydeck as pdk
 
 st.set_page_config(layout="wide")
 
-
-st.title("La Mia Pizzeria")
+nomePizzeria = "La Mia Pizzeria"
+st.title(nomePizzeria)
 
 st.expander("💡 Analisi AI", expanded=True)
 
@@ -42,8 +44,6 @@ with tab1:
     
     col1, col2, col3 = st.columns([1.35, 1.8, 2.3], vertical_alignment="bottom")
 
-
-    # Create container for metrics in col1
     with col1:
         st.metric("Rating", f"{4.5} ⭐️", f"{-0.1} vs competitor", border=True)
         st.metric("Trend Rating", f"{4.6} ✨", f"{0.1} su {df['mese'].iloc[-2]}", border=True)
@@ -166,6 +166,72 @@ with tab1:
 
             # Render the chart
             st.altair_chart(line_chart, use_container_width=True)
+
+
+    def generate_competitor_data(n_competitors=20, center_lat=44.783338, center_lon=10.886311):
+        """Generate sample competitor data around a center point (Carpi)"""
+        competitors = pd.DataFrame({
+            'name': [f'Competitor {i+1}' for i in range(n_competitors)],
+            'lat': [center_lat + uniform(-0.01, 0.01) for _ in range(n_competitors)],
+            'lon': [center_lon + uniform(-0.01, 0.01) for _ in range(n_competitors)],
+            'rating': [round(uniform(3.5, 4.8), 1) for _ in range(n_competitors)],
+            'interactions': [int(uniform(50, 500)) for _ in range(n_competitors)]
+        })
+        return competitors
+
+    col4, col5 = st.columns([7, 3], vertical_alignment="bottom")
+    with col4:
+        with st.container(border=True):
+            st.metric("Le Pizze Più Votate Qui Attorno", "", "")
+
+            ##TODO: aggiungere la mia pizzeria alla mappa.
+
+            # Generate competitor data
+            competitors_df = generate_competitor_data()
+
+            st.pydeck_chart(
+                pdk.Deck(
+                    map_style=None,
+                    initial_view_state=pdk.ViewState(
+                        latitude=44.783338,
+                        longitude=10.886311,
+                        zoom=13,
+                        pitch=0,
+                    ),
+                    layers=[
+                        pdk.Layer(
+                            "ScatterplotLayer",
+                            data=competitors_df,
+                            get_position="[lon, lat]",
+                            get_color=[
+                                "255 * (1 - (rating - 3.5) / 1.5)",
+                                "255 * ((rating - 3.5) / 1.5)",
+                                "0",
+                                "160"
+                            ],
+                            # Scale radius based on interactions
+                            get_radius="interactions / 2",  # Divide by 2 to get reasonable dot sizes
+                            radius_min_pixels=5,           # Minimum size
+                            radius_max_pixels=30,          # Maximum size
+                            pickable=True,
+                            auto_highlight=True,
+                        ),
+                    ],
+                    tooltip={"text": "{name}\nRating: {rating}\nInterazioni: {interactions}"},
+                ),
+                height= 400
+            )
+
+    with col5:
+       with st.container(border=True):
+          st.markdown("### Riepilogo Recensioni")
+
+
+
+
+
+
+
             
 with tab2:
             
