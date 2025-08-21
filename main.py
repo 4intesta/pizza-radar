@@ -14,7 +14,13 @@ st.set_page_config(layout="wide")
 nomePizzeria = "La Mia Pizzeria"
 st.title(nomePizzeria)
 
-st.expander("💡 Analisi AI", expanded=True)
+with st.expander("💡 Analisi AI", expanded=True):
+    with st.container(border=True):
+        st.badge("Punto di forza", icon="💪", color="green")
+    with st.container(border=True):
+        st.badge("Punto debole", icon="⚠️", color="orange")
+    with st.container(border=True):
+        st.badge("Suggerimenti", icon="🛠️", color="blue")
 
 tab1, tab2, tab3 = st.tabs([" 💬 Cosa dicono di noi ", " 🔍 Dentro la nostra Offerta ", " 🍕 Testa a Testa "])
 
@@ -123,7 +129,7 @@ with tab1:
                 point={
                     "filled": False,
                     "fill": "white",
-                    "size": 60
+                    "size": 100
                 }
             ).encode(
                 x=alt.X('mese:O', 
@@ -182,7 +188,7 @@ with tab1:
     col4, col5 = st.columns([7, 3], vertical_alignment="bottom")
     with col4:
         with st.container(border=True):
-            st.metric("Le Pizze Più Votate Qui Attorno", "", "")
+            st.metric("Le Pizze Più Votate Qui Attorno (nell'ultimo mese)", "", "")
 
             ##TODO: aggiungere la mia pizzeria alla mappa.
 
@@ -223,16 +229,82 @@ with tab1:
             )
 
     with col5:
-       with st.container(border=True):
-          st.markdown("### Riepilogo Recensioni")
+        def get_articles_data():
+            return [
+                {
+                    "newspaper": "Gazzetta di Modena",
+                    "date": "21 Ago 2025",
+                    "title": "Le migliori 10 pizzerie di Carpi: la classifica definitiva del 2025",
+                    "link": "https://gazzettadimodena.it/news"
+                },
+                {
+                    "newspaper": "Il Resto del Carlino",
+                    "date": "19 Ago 2025",
+                    "title": "Nuove aperture in centro: le pizzerie che stanno conquistando Carpi",
+                    "link": "https://www.ilrestodelcarlino.it/news"
+                },
+                {
+                    "newspaper": "La Repubblica Bologna",
+                    "date": "15 Ago 2025",
+                    "title": "Pizza gourmet in Emilia: le tendenze del 2025",
+                    "link": "https://bologna.repubblica.it/news"
+                }
+            ]
 
+        with st.container(border=True, height=230):
+            articles = get_articles_data()
+            st.metric("Ultime Notizie", "", "")
+            for article in articles:
+                with st.container(border=True):
+                    st.markdown(
+                        f"""
+                        <p style="font-size:14px; line-height:1.6;">
+                            {article['newspaper']}<br>
+                            {article['date']}<br>
+                            <a href="{article['link']}" style="text-decoration: none; font-style: italic;">
+                                {article['title']}
+                            </a>
+                        </p>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
+        def get_new_pizzerias_data():
+            return [
+                {
+                    "name": "Pizzeria Nuova",
+                    "address": "Via Roma 1, Carpi",
+                    "link": "https://www.google.com/maps/place/Via+Roma+1,+Carpi+MO"
+                },
+                {
+                    "name": "Pizzeria Bella Napoli",
+                    "address": "Corso Cabassi 10, Carpi",
+                    "link": "https://www.google.com/maps/place/Corso+Cabassi+10,+Carpi+MO"
+                },
+                {
+                    "name": "Pizzeria Da Luigi",
+                    "address": "Via Cavour 22, Carpi",
+                    "link": "https://www.google.com/maps/place/Via+Cavour+22,+Carpi+MO"
+                }
+            ]
 
+        pizzerias = get_new_pizzerias_data()
 
-
-
-
-            
+        with st.container(border=True, height=230):
+            st.metric("Nuove pizzerie in zona", "", "")
+            for p in pizzerias:
+                with st.container(border=True):
+                    st.markdown(
+                        f"""
+                        <p style="font-size:14px; line-height:1.6;">
+                            <a href="{p['link']}" style="text-decoration: none; font-weight: bold;">
+                                {p['name']}
+                            </a><br>
+                            <span style="font-style: italic;">{p['address']}</span>
+                        </p>
+                        """,
+                        unsafe_allow_html=True
+                    )
 with tab2:
             
     col1, col2, col3, col4, col5= st.columns([1.35, 1.35, 1.35, 1.35, 1.35], vertical_alignment="bottom")
