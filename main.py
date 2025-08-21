@@ -166,3 +166,61 @@ with tab1:
 
             # Render the chart
             st.altair_chart(line_chart, use_container_width=True)
+            
+with tab2:
+            
+    col1, col2, col3, col4, col5= st.columns([1.35, 1.35, 1.35, 1.35, 1.35], vertical_alignment="bottom")
+
+    with col1:
+        st.metric("Prezzo Margherita 🍕", f"{10} €", f"{-0.1} € vs Avg. competitor", border=True)
+    
+    with col2:
+        st.metric("Prezzo Medio 💸", f"{10.5} €", f"{0.1} € vs Avg. competitor", border=True)
+
+    with col3:
+        st.metric("Varietà Menu", f"{25}", f"{2} vs Avg. competitor", border=True)
+
+    with col4:
+        st.metric("Tempo Massimo di Permanenza ", f"{2} Ore", f"{-10} Minuti vs Avg. competitor", border=True)
+    
+    with col5:
+        st.metric("Tempo Medio di Attesa", f"{25}", f"{-20} Minuti vs Avg. competitor", border=True)
+
+    col6, col7, col8, col9 = st.columns([1.6875, 1.6875, 1.6875, 1.6875], vertical_alignment="bottom")
+
+    with col6:
+        with st.container(border=True):
+            st.metric("Rating Cibo", f"{4.1}", f"{-0.5} vs Avg. competitor", border=False)
+            st.metric("Fra le pizzerie n°", f"{4}", border=False)
+
+    with col7:
+        with st.container(border=True):
+            st.metric("Rating Servizio", f"{4.1}", f"{-0.5} vs Avg. competitor", border=False)
+            st.metric("Fra le pizzerie n°", f"{4}", border=False)
+
+    with col8:
+        with st.container(border=True):  
+            st.metric("Rating Atmosfera", f"{4.1}", f"{-0.5} vs Avg. competitor", border=False)
+            st.metric("Fra le pizzerie n°", f"{4}", border=False)
+
+    with col9:
+        with st.container(border=True):
+            st.metric("Rating Qualità-Prezzo", f"{4.1}", f"{-0.5} vs Avg. competitor", border=False)
+            st.metric("Fra le pizzerie n°", f"{4}", border=False)
+
+    col10, col11,col12 = st.columns([2.25, 2.25, 2.25], vertical_alignment="bottom")
+
+    with col10:
+        with st.container(border=True):
+            st.metric("Pizzeria Top", "", border=False)
+            st.metric("Ultimo Commento", "", border=False)
+
+    with col11:
+        with st.container(border=True):
+            st.metric("Pizzeria Worst", "", border=False)
+            st.metric("Ultimo Commento", "", border=False)
+
+    with col12:
+        with st.container(border=True):
+            st.metric("Pizzeria in crescita", "", border=False)
+            st.metric("Ultimo Commento", "", border=False)
