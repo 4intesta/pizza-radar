@@ -370,7 +370,7 @@ with tab2:
             'prezzo_medio': [12.5, 11.5, 13.0, 11.0, 12.5, 10.5, 13.5, 12.0, 11.0, 12.0, 11.5],
             'menu_items': [45, 38, 42, 35, 40, 32, 48, 41, 37, 43, 39],
             'avg_stay_duration': [2.00, 1.75, 1.92, 1.58, 1.83, 1.50, 2.08, 1.80, 1.67, 1.87, 1.63],  # Hours with 2 decimals
-            'wait_time': [5, 5, 5, 6, 6, 6, 4, 5, 6, 5, 5],  # Integer minutes
+            'wait_time': [5, 15, 5, 6, 6, 6, 4, 5, 6, 5, 5],  # Integer minutes
             'is_mine': [True, False, False, False, False, False, False, False, False, False, False]
         })
         col1, col2 = st.columns([4.1, 1.35], vertical_alignment="bottom")
@@ -480,9 +480,11 @@ with tab2:
                 # Update the metrics to remove the division by 60 since data is already in hours
                 st.metric("Permanenza media", 
                          f"{my_data['avg_stay_duration']:.1f} ore", 
-                         f"{(my_data['avg_stay_duration'] - avg_competitor_stay):.2f} vs competitor", 
+                         f"{(my_data['avg_stay_duration'] - avg_competitor_stay):.2f} ore vs competitor", 
                          border=False)
                 st.metric("Prima di sedersi", 
                          f"{int(my_data['wait_time'])} min", 
-                         f"{int(my_data['wait_time'] - avg_competitor_wait)} vs competitor", 
+                         f"{int(my_data['wait_time'] - avg_competitor_wait)} min vs competitor", 
                          border=False)
+
+        tab1, tab2, tab3, tab4 = st.tabs(["🍕 Cibo", "🤵 Servizio ", "🪑 Atmosfera", "💰 Qualità/Prezzo"])
