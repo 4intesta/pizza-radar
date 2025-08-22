@@ -27,7 +27,7 @@ tab1, tab2, tab3 = st.tabs([" 💬 Cosa dicono di noi ", " 🔍 Dentro la nostra
 with tab1:
 
     df = pd.DataFrame({
-                "mese": ["Set", "Ott", "Nov", "Dic"],
+                "mese": ["Mag", "Giu", "Lug", "Ago"],
                 "positive": [3,6,2,10],
                 "negative": [0,-1,-4,-5],
             })
@@ -466,6 +466,71 @@ with tab3:
         label_visibility="collapsed"
     )
     
+    def create_comparison_chart(prices_df, selected_pizzeria, months, category):
+        """Helper function to create comparison charts with rolling 12 months"""
+        # Get current month index (assuming we're in August)
+        current_month_idx = months.index("Ago")
+        
+        # Create ordered list of last 12 months ending with current month
+        rolling_months = months[current_month_idx - 11:] + months[:current_month_idx + 1]
+        
+        # Get ratings for rolling 12 months
+        my_ratings = prices_df[prices_df['is_mine']][[f'rating_{category}_{m}' for m in rolling_months]].iloc[0]
+        competitor_ratings = prices_df[prices_df['pizzeria'] == selected_pizzeria][[f'rating_{category}_{m}' for m in rolling_months]].iloc[0]
+        
+        # Calculate minimum rating from both pizzerias
+        min_rating = min(min(my_ratings), min(competitor_ratings))
+        
+        comparison_df = pd.DataFrame({
+            'mese': rolling_months,
+            'La Mia Pizzeria': my_ratings.values,
+            'Competitor': competitor_ratings.values
+        })
+        
+        comparison_melted = comparison_df.melt(
+            id_vars=['mese'],
+            var_name='Pizzeria',
+            value_name='Rating'
+        )
+        
+        return alt.Chart(comparison_melted).mark_line(
+            point={
+                    "filled": False,
+                    "fill": "white",
+                    "size": 100
+                }
+        ).encode(
+            x=alt.X('mese:O',
+                   title=None,
+                   axis=alt.Axis(
+                       labelAngle=0,
+                       grid=False
+                   ),
+                   sort=rolling_months),  # Use rolling_months for proper ordering
+            y=alt.Y('Rating:Q',
+                   scale=alt.Scale(domain=[min_rating, 5]),  # Use calculated min_rating
+                   title=None,
+                   axis=alt.Axis(grid=False)),
+            color=alt.Color('Pizzeria:N',
+                          scale=alt.Scale(
+                              domain=['La Mia Pizzeria', 'Competitor'],
+                              range=['#F12929', '#4285F4']
+                          )),
+            tooltip=[
+                alt.Tooltip('mese:N', title='📅 Periodo'),
+                alt.Tooltip('Pizzeria:N', title='🏪 Pizzeria'),
+                alt.Tooltip('Rating:Q', title='⭐ Rating', format='.1f')
+            ]
+        ).properties(
+            height=300,
+            padding={"left": 0, "top": 20, "right": 0, "bottom": 0}
+        ).configure_axis(
+            labelFontSize=12
+        ).configure_legend(
+            orient='top',
+            title=None
+        )
+    
     # Only show tabs if a pizzeria is selected
     if selected_pizzeria:
         tab_comparison_cibo, tab_comparison_servizio, tab_comparison_atmosfera, tab_comparison_qualita_prezzo = st.tabs([
@@ -477,123 +542,24 @@ with tab3:
         
         with tab_comparison_cibo:
             if selected_pizzeria:
-                # Get ratings for my pizzeria and selected competitor
-                my_ratings = prices_df[prices_df['is_mine']][['rating_cibo_' + m for m in months]].iloc[0]
-                competitor_ratings = prices_df[prices_df['pizzeria'] == selected_pizzeria][['rating_cibo_' + m for m in months]].iloc[0]
-                
-                # Create comparison DataFrame
-                comparison_df = pd.DataFrame({
-                    'mese': months,
-                    'La Mia Pizzeria': my_ratings.values,
-                    'Competitor': competitor_ratings.values
-                })
-                
-                # Melt the DataFrame for Altair
-                comparison_melted = comparison_df.melt(
-                    id_vars=['mese'],
-                    var_name='Pizzeria',
-                    value_name='Rating'
-                )
-                
-                # Create comparison chart
-                comparison_chart = alt.Chart(comparison_melted).mark_line(
-                    point=True
-                ).encode(
-                    x=alt.X('mese:O',
-                           title=None,
-                           axis=alt.Axis(
-                               labelAngle=0,
-                               grid=False
-                           ),
-                           sort=months),
-                    y=alt.Y('Rating:Q',
-                           scale=alt.Scale(domain=[3.5, 5]),
-                           title=None,
-                           axis=alt.Axis(grid=False)),
-                    color=alt.Color('Pizzeria:N',
-                                  scale=alt.Scale(
-                                      domain=['La Mia Pizzeria', 'Competitor'],
-                                      range=['#F12929', '#4285F4']
-                                  )),
-                    tooltip=[
-                        alt.Tooltip('mese:N', title='📅 Periodo'),
-                        alt.Tooltip('Pizzeria:N', title='🏪 Pizzeria'),
-                        alt.Tooltip('Rating:Q', title='⭐ Rating', format='.1f')
-                    ]
-                ).properties(
-                    height=300,
-                    padding={"left": 0, "top": 20, "right": 0, "bottom": 0}
-                ).configure_axis(
-                    labelFontSize=12
-                ).configure_legend(
-                    orient='top',
-                    title=None
-                )
-                
-                st.altair_chart(comparison_chart, use_container_width=True)
+                with st.container(border=True):
+                    chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'cibo')
+                    st.altair_chart(chart, use_container_width=True)
             
         with tab_comparison_servizio:
-            def create_comparison_chart(prices_df, selected_pizzeria, months, category):
-                """Helper function to create comparison charts"""
-                my_ratings = prices_df[prices_df['is_mine']][[f'rating_{category}_{m}' for m in months]].iloc[0]
-                competitor_ratings = prices_df[prices_df['pizzeria'] == selected_pizzeria][[f'rating_{category}_{m}' for m in months]].iloc[0]
-                
-                comparison_df = pd.DataFrame({
-                    'mese': months,
-                    'La Mia Pizzeria': my_ratings.values,
-                    'Competitor': competitor_ratings.values
-                })
-                
-                comparison_melted = comparison_df.melt(
-                    id_vars=['mese'],
-                    var_name='Pizzeria',
-                    value_name='Rating'
-                )
-                
-                return alt.Chart(comparison_melted).mark_line(
-                    point=True
-                ).encode(
-                    x=alt.X('mese:O',
-                           title=None,
-                           axis=alt.Axis(
-                               labelAngle=0,
-                               grid=False
-                           ),
-                           sort=months),
-                    y=alt.Y('Rating:Q',
-                           scale=alt.Scale(domain=[3.5, 5]),
-                           title=None,
-                           axis=alt.Axis(grid=False)),
-                    color=alt.Color('Pizzeria:N',
-                                  scale=alt.Scale(
-                                      domain=['La Mia Pizzeria', 'Competitor'],
-                                      range=['#F12929', '#4285F4']
-                                  )),
-                    tooltip=[
-                        alt.Tooltip('mese:N', title='📅 Periodo'),
-                        alt.Tooltip('Pizzeria:N', title='🏪 Pizzeria'),
-                        alt.Tooltip('Rating:Q', title='⭐ Rating', format='.1f')
-                    ]
-                ).properties(
-                    height=300,
-                    padding={"left": 0, "top": 20, "right": 0, "bottom": 0}
-                ).configure_axis(
-                    labelFontSize=12
-                ).configure_legend(
-                    orient='top',
-                    title=None
-                )
-
             if selected_pizzeria:
-                chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'servizio')
-                st.altair_chart(chart, use_container_width=True)
+                with st.container(border=True):
+                    chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'servizio')
+                    st.altair_chart(chart, use_container_width=True)
 
         with tab_comparison_atmosfera:
             if selected_pizzeria:
-                chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'atmosfera')
-                st.altair_chart(chart, use_container_width=True)
+                with st.container(border=True):
+                    chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'atmosfera')
+                    st.altair_chart(chart, use_container_width=True)
 
         with tab_comparison_qualita_prezzo:
             if selected_pizzeria:
-                chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'qualita_prezzo')
-                st.altair_chart(chart, use_container_width=True)
+                with st.container(border=True):
+                    chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'qualita_prezzo')
+                    st.altair_chart(chart, use_container_width=True)
