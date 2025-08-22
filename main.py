@@ -22,7 +22,7 @@ with st.expander("💡 Analisi AI", expanded=True):
     with st.container(border=True):
         st.badge("Suggerimenti", icon="🛠️", color="blue")
 
-tab1, tab2, tab3 = st.tabs([" 💬 Cosa dicono di noi ", " 🔍 Dentro la nostra Offerta ", " 🍕 Testa a Testa "])
+tab1, tab2, tab3 = st.tabs([" 💬 Cosa dicono di noi ", " 🔍 Dentro la nostra Offerta ", " 🍕 Confrontiamoci con pizzerie in zona "])
 
 with tab1:
 
@@ -47,6 +47,42 @@ with tab1:
         "Dic": "Dicembre"
     }
     
+    # Create sample data for pizza prices
+    prices_df = pd.DataFrame({
+        'pizzeria': ['La Mia Pizzeria'] + [f'Competitor {i+1}' for i in range(10)],
+        'prezzo_margherita': [10.0, 9.5, 11.0, 9.0, 10.5, 8, 11.5, 10.0, 9.0, 10.0, 9.0],
+        'prezzo_medio': [12.5, 11.5, 13.0, 11.0, 12.5, 10.5, 13.5, 12.0, 11.0, 12.0, 11.5],
+        'menu_items': [45, 38, 42, 35, 40, 32, 48, 41, 37, 43, 39],
+        'avg_stay_duration': [2.00, 1.75, 1.92, 1.58, 1.83, 1.50, 2.08, 1.80, 1.67, 1.87, 1.63],  # Hours with 2 decimals
+        'wait_time': [5, 15, 5, 6, 6, 6, 4, 5, 6, 5, 5],  # Integer minutes
+        'is_mine': [True, False, False, False, False, False, False, False, False, False, False]
+    })
+    
+    # Generate sample monthly ratings for each pizzeria
+    np.random.seed(42)  # For reproducible results
+    months = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
+
+    # Define base ratings for all categories
+    base_ratings = {
+        'cibo': 4.2,
+        'servizio': 4.0,
+        'atmosfera': 4.1,
+        'qualita_prezzo': 3.8
+    }
+
+    # Generate ratings for all categories in a single loop
+    for category in ['cibo', 'servizio', 'atmosfera', 'qualita_prezzo']:
+        for month in months:
+            ratings = [
+                round(base_ratings[category] + np.random.normal(0, 0.2), 1)
+                for _ in range(len(prices_df))
+            ]
+            # Clip ratings between 3.5 and 5.0
+            ratings = np.clip(ratings, 3.5, 5.0)
+            prices_df[f'rating_{category}_{month}'] = ratings
+
+    print(prices_df)
+
     col1, col2, col3 = st.columns([1.35, 1.8, 2.3], vertical_alignment="bottom")
 
     with col1:
@@ -304,18 +340,8 @@ with tab1:
                         """,
                         unsafe_allow_html=True
                     )
-                    
+
     with tab2:
-        # Create sample data for pizza prices
-        prices_df = pd.DataFrame({
-            'pizzeria': ['La Mia Pizzeria'] + [f'Competitor {i+1}' for i in range(10)],
-            'prezzo_margherita': [10.0, 9.5, 11.0, 9.0, 10.5, 8, 11.5, 10.0, 9.0, 10.0, 9.0],
-            'prezzo_medio': [12.5, 11.5, 13.0, 11.0, 12.5, 10.5, 13.5, 12.0, 11.0, 12.0, 11.5],
-            'menu_items': [45, 38, 42, 35, 40, 32, 48, 41, 37, 43, 39],
-            'avg_stay_duration': [2.00, 1.75, 1.92, 1.58, 1.83, 1.50, 2.08, 1.80, 1.67, 1.87, 1.63],  # Hours with 2 decimals
-            'wait_time': [5, 15, 5, 6, 6, 6, 4, 5, 6, 5, 5],  # Integer minutes
-            'is_mine': [True, False, False, False, False, False, False, False, False, False, False]
-        })
         col1, col2 = st.columns([4.1, 1.35], vertical_alignment="bottom")
         with col1:
             with st.container(border=True):
@@ -429,5 +455,145 @@ with tab1:
                          f"{int(my_data['wait_time'])} min", 
                          f"{int(my_data['wait_time'] - avg_competitor_wait)} min vs competitor", 
                          border=False)
+                
+with tab3:
+    # Store selectbox value in a variable
+    selected_pizzeria = st.selectbox(
+        "Confronta la tua pizzera con altre in zona", 
+        options=prices_df[prices_df['is_mine'] == False]['pizzeria'].tolist(), 
+        index=None,
+        placeholder="Scegli una pizzeria in zona...", 
+        label_visibility="collapsed"
+    )
+    
+    # Only show tabs if a pizzeria is selected
+    if selected_pizzeria:
+        tab_comparison_cibo, tab_comparison_servizio, tab_comparison_atmosfera, tab_comparison_qualita_prezzo = st.tabs([
+            "🍕 Cibo", 
+            "🤵 Servizio ", 
+            "🪑 Atmosfera", 
+            "💰 Qualità/Prezzo"
+        ])
+        
+        with tab_comparison_cibo:
+            if selected_pizzeria:
+                # Get ratings for my pizzeria and selected competitor
+                my_ratings = prices_df[prices_df['is_mine']][['rating_cibo_' + m for m in months]].iloc[0]
+                competitor_ratings = prices_df[prices_df['pizzeria'] == selected_pizzeria][['rating_cibo_' + m for m in months]].iloc[0]
+                
+                # Create comparison DataFrame
+                comparison_df = pd.DataFrame({
+                    'mese': months,
+                    'La Mia Pizzeria': my_ratings.values,
+                    'Competitor': competitor_ratings.values
+                })
+                
+                # Melt the DataFrame for Altair
+                comparison_melted = comparison_df.melt(
+                    id_vars=['mese'],
+                    var_name='Pizzeria',
+                    value_name='Rating'
+                )
+                
+                # Create comparison chart
+                comparison_chart = alt.Chart(comparison_melted).mark_line(
+                    point=True
+                ).encode(
+                    x=alt.X('mese:O',
+                           title=None,
+                           axis=alt.Axis(
+                               labelAngle=0,
+                               grid=False
+                           ),
+                           sort=months),
+                    y=alt.Y('Rating:Q',
+                           scale=alt.Scale(domain=[3.5, 5]),
+                           title=None,
+                           axis=alt.Axis(grid=False)),
+                    color=alt.Color('Pizzeria:N',
+                                  scale=alt.Scale(
+                                      domain=['La Mia Pizzeria', 'Competitor'],
+                                      range=['#F12929', '#4285F4']
+                                  )),
+                    tooltip=[
+                        alt.Tooltip('mese:N', title='📅 Periodo'),
+                        alt.Tooltip('Pizzeria:N', title='🏪 Pizzeria'),
+                        alt.Tooltip('Rating:Q', title='⭐ Rating', format='.1f')
+                    ]
+                ).properties(
+                    height=300,
+                    padding={"left": 0, "top": 20, "right": 0, "bottom": 0}
+                ).configure_axis(
+                    labelFontSize=12
+                ).configure_legend(
+                    orient='top',
+                    title=None
+                )
+                
+                st.altair_chart(comparison_chart, use_container_width=True)
+            
+        with tab_comparison_servizio:
+            def create_comparison_chart(prices_df, selected_pizzeria, months, category):
+                """Helper function to create comparison charts"""
+                my_ratings = prices_df[prices_df['is_mine']][[f'rating_{category}_{m}' for m in months]].iloc[0]
+                competitor_ratings = prices_df[prices_df['pizzeria'] == selected_pizzeria][[f'rating_{category}_{m}' for m in months]].iloc[0]
+                
+                comparison_df = pd.DataFrame({
+                    'mese': months,
+                    'La Mia Pizzeria': my_ratings.values,
+                    'Competitor': competitor_ratings.values
+                })
+                
+                comparison_melted = comparison_df.melt(
+                    id_vars=['mese'],
+                    var_name='Pizzeria',
+                    value_name='Rating'
+                )
+                
+                return alt.Chart(comparison_melted).mark_line(
+                    point=True
+                ).encode(
+                    x=alt.X('mese:O',
+                           title=None,
+                           axis=alt.Axis(
+                               labelAngle=0,
+                               grid=False
+                           ),
+                           sort=months),
+                    y=alt.Y('Rating:Q',
+                           scale=alt.Scale(domain=[3.5, 5]),
+                           title=None,
+                           axis=alt.Axis(grid=False)),
+                    color=alt.Color('Pizzeria:N',
+                                  scale=alt.Scale(
+                                      domain=['La Mia Pizzeria', 'Competitor'],
+                                      range=['#F12929', '#4285F4']
+                                  )),
+                    tooltip=[
+                        alt.Tooltip('mese:N', title='📅 Periodo'),
+                        alt.Tooltip('Pizzeria:N', title='🏪 Pizzeria'),
+                        alt.Tooltip('Rating:Q', title='⭐ Rating', format='.1f')
+                    ]
+                ).properties(
+                    height=300,
+                    padding={"left": 0, "top": 20, "right": 0, "bottom": 0}
+                ).configure_axis(
+                    labelFontSize=12
+                ).configure_legend(
+                    orient='top',
+                    title=None
+                )
 
-        tab1, tab2, tab3, tab4 = st.tabs(["🍕 Cibo", "🤵 Servizio ", "🪑 Atmosfera", "💰 Qualità/Prezzo"])
+            if selected_pizzeria:
+                chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'servizio')
+                st.altair_chart(chart, use_container_width=True)
+
+        with tab_comparison_atmosfera:
+            if selected_pizzeria:
+                chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'atmosfera')
+                st.altair_chart(chart, use_container_width=True)
+
+        with tab_comparison_qualita_prezzo:
+            if selected_pizzeria:
+                chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'qualita_prezzo')
+                st.altair_chart(chart, use_container_width=True)
