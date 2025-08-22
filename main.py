@@ -51,7 +51,7 @@ with tab1:
 
     with col1:
         st.metric("Rating", f"{4.5} ⭐️", f"{-0.1} vs competitor", border=True)
-        st.metric("Trend Rating", f"{4.6} ✨", f"{0.1} su {df['mese'].iloc[-2]}", border=True)
+        st.metric("Trend Rating", f"{4.6} ✨", f"{0.1} su mese precedente", border=True)
 
     with col2:
         with st.container(border=True):
@@ -363,25 +363,34 @@ with tab2:
             st.metric("Ultimo Commento", "", border=False)
 
     with tab3:
+        # Create sample data for pizza prices
+        prices_df = pd.DataFrame({
+            'pizzeria': ['La Mia Pizzeria'] + [f'Competitor {i+1}' for i in range(10)],
+            'prezzo_margherita': [10.0, 9.5, 11.0, 9.0, 10.5, 8, 11.5, 10.0, 9.0, 10.0, 9.0],
+            'prezzo_medio': [12.5, 11.5, 13.0, 11.0, 12.5, 10.5, 13.5, 12.0, 11.0, 12.0, 11.5],
+            'menu_items': [45, 38, 42, 35, 40, 32, 48, 41, 37, 43, 39],
+            'avg_stay_duration': [2.00, 1.75, 1.92, 1.58, 1.83, 1.50, 2.08, 1.80, 1.67, 1.87, 1.63],  # Hours with 2 decimals
+            'wait_time': [5, 5, 5, 6, 6, 6, 4, 5, 6, 5, 5],  # Integer minutes
+            'is_mine': [True, False, False, False, False, False, False, False, False, False, False]
+        })
         col1, col2 = st.columns([4.1, 1.35], vertical_alignment="bottom")
         with col1:
             with st.container(border=True):
                 chart_type = st.selectbox(
                     "Seleziona tipologia",
-                    ["Come si posiziona la tua Margherita", "Come si posiziona la tua Pizza media"],
+                    ["Quanto Costa la Tua Margherita?", "Quanto Costa la tua Pizza in media?"],
                     label_visibility="collapsed"
                 )
+                # Get my values
+                my_row = prices_df.loc[prices_df['is_mine']].iloc[0]
+                my_margherita_price = my_row['prezzo_margherita']
+                my_pizza_media = my_row['prezzo_medio']
+                # Get competitor averages
+                avg_competitor_margherita = prices_df.loc[~prices_df['is_mine'], 'prezzo_margherita'].mean()
+                avg_competitor_pizza = prices_df.loc[~prices_df['is_mine'], 'prezzo_medio'].mean()
 
-                # Create sample data for pizza prices
-                prices_df = pd.DataFrame({
-                    'pizzeria': ['La Mia Pizzeria'] + [f'Competitor {i+1}' for i in range(10)],
-                    'prezzo_margherita': [10.0, 9.5, 11.0, 9.0, 10.5, 8, 11.5, 10.0, 9.0, 10.0, 9.0],
-                    'prezzo_medio': [12.5, 11.5, 13.0, 11.0, 12.5, 10.5, 13.5, 12.0, 11.0, 12.0, 11.5],
-                    'is_mine': [True, False, False, False, False, False, False, False, False, False, False]
-                })
-
-                if chart_type == "Come si posiziona la tua Margherita":
-                    st.metric("Prezzo Margherita 🍕", f"{10} €", f"{-0.1} € vs Avg. competitor", border=False)
+                if chart_type == "Quanto Costa la Tua Margherita?":
+                    st.metric("Prezzo Margherita 🌼", f"{my_margherita_price} €", f"{my_margherita_price - avg_competitor_margherita:.2f} € vs Avg. competitor", delta_color="off", border=False)
                     prices_df['prezzo_rounded'] = (prices_df['prezzo_margherita'] * 2).apply(np.floor) / 2
                     price_freq = prices_df.groupby('prezzo_rounded').size().reset_index(name='frequency')
                     price_freq['prezzo_rounded'] += 0.0001
@@ -410,15 +419,15 @@ with tab2:
                             alt.Tooltip('frequency:Q', title='Numero Pizzerie')
                         ]
                     ).properties(
-                        height=201,
-                        padding={"left": 0, "top": 0, "right": 0, "bottom": 0}
+                        height=188,
+                        padding={"left": 5, "top": 0, "right": 5, "bottom": 0}
                     )
 
                     final_chart = freq_chart
                     st.altair_chart(final_chart, use_container_width=True)
                 
                 else:  # Pizza media selected
-                    st.metric("Prezzo Medio 💸", f"{10.5} €", f"{0.1} € vs Avg. competitor", border=False)
+                    st.metric("Prezzo Pizza in media 🍕", f"{my_pizza_media} €", f"{my_pizza_media - avg_competitor_pizza:.2f} € vs Avg. competitor", delta_color="off", border=False)
                     # Calculate frequency distribution
                     prices_df['prezzo_rounded'] = (prices_df['prezzo_medio'] * 2).apply(np.floor) / 2
                     avg_price_freq = prices_df.groupby('prezzo_rounded').size().reset_index(name='frequency')
@@ -447,9 +456,33 @@ with tab2:
                             alt.Tooltip('frequency:Q', title='Numero Pizzerie')
                         ]
                     ).properties(
-                        height=201,
-                        padding={"left": 0, "top": 0, "right": 0, "bottom": 0}
+                        height=188,
+                        padding={"left": 5, "top": 0, "right": 5, "bottom": 0}
                     )
 
                     # Display the chart
                     st.altair_chart(avg_freq_chart, use_container_width=True)
+        
+        with col2:
+            # Get my values and competitor averages
+            my_data = prices_df.loc[prices_df['is_mine']].iloc[0]
+            avg_competitor_menu = prices_df.loc[~prices_df['is_mine'], 'menu_items'].mean()
+            avg_competitor_stay = prices_df.loc[~prices_df['is_mine'], 'avg_stay_duration'].mean()
+            avg_competitor_wait = prices_df.loc[~prices_df['is_mine'], 'wait_time'].mean()
+
+            # Update metrics with real data
+            st.metric("Nel Menu", 
+                     f"{my_data['menu_items']} pizze", 
+                     f"{my_data['menu_items'] - avg_competitor_menu:.1f} vs competitor", 
+                     border=True)
+            
+            with st.container(border=True): 
+                # Update the metrics to remove the division by 60 since data is already in hours
+                st.metric("Permanenza media", 
+                         f"{my_data['avg_stay_duration']:.1f} ore", 
+                         f"{(my_data['avg_stay_duration'] - avg_competitor_stay):.2f} vs competitor", 
+                         border=False)
+                st.metric("Prima di sedersi", 
+                         f"{int(my_data['wait_time'])} min", 
+                         f"{int(my_data['wait_time'] - avg_competitor_wait)} vs competitor", 
+                         border=False)
