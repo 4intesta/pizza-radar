@@ -31,7 +31,6 @@ with tab1:
                 "positive": [3,6,2,10],
                 "negative": [0,-1,-4,-5],
             })
-    print(df)
 
     month_map = {
         "Gen": "Gennaio",
@@ -362,3 +361,95 @@ with tab2:
         with st.container(border=True):
             st.metric("Pizzeria in crescita", "", border=False)
             st.metric("Ultimo Commento", "", border=False)
+
+    with tab3:
+        col1, col2 = st.columns([4.1, 1.35], vertical_alignment="bottom")
+        with col1:
+            with st.container(border=True):
+                chart_type = st.selectbox(
+                    "Seleziona tipologia",
+                    ["Come si posiziona la tua Margherita", "Come si posiziona la tua Pizza media"],
+                    label_visibility="collapsed"
+                )
+
+                # Create sample data for pizza prices
+                prices_df = pd.DataFrame({
+                    'pizzeria': ['La Mia Pizzeria'] + [f'Competitor {i+1}' for i in range(10)],
+                    'prezzo_margherita': [10.0, 9.5, 11.0, 9.0, 10.5, 8, 11.5, 10.0, 9.0, 10.0, 9.0],
+                    'prezzo_medio': [12.5, 11.5, 13.0, 11.0, 12.5, 10.5, 13.5, 12.0, 11.0, 12.0, 11.5],
+                    'is_mine': [True, False, False, False, False, False, False, False, False, False, False]
+                })
+
+                if chart_type == "Come si posiziona la tua Margherita":
+                    st.metric("Prezzo Margherita 🍕", f"{10} €", f"{-0.1} € vs Avg. competitor", border=False)
+                    prices_df['prezzo_rounded'] = (prices_df['prezzo_margherita'] * 2).apply(np.floor) / 2
+                    price_freq = prices_df.groupby('prezzo_rounded').size().reset_index(name='frequency')
+                    price_freq['prezzo_rounded'] += 0.0001
+
+                    my_price = prices_df.loc[prices_df['is_mine'], 'prezzo_rounded'].iloc[0]+ 0.0001
+
+                    highlight_value = my_price
+
+                    freq_chart = alt.Chart(price_freq).mark_bar(
+                        opacity=1
+                    ).encode(
+                        x=alt.X('prezzo_rounded:Q',
+                                title=None,
+                                bin=alt.Bin(step=0.5),
+                                axis=alt.Axis(grid=False)),
+                        y=alt.Y('frequency:Q',
+                                title=None,
+                                axis=alt.Axis(grid=False, labels=False)),
+                        color=alt.condition(
+                            alt.datum.prezzo_rounded == highlight_value,
+                            alt.value("#4285F4"),                             # color if True
+                            alt.value("#808080B6")                        # color if False
+                        ),
+                        tooltip=[
+                            alt.Tooltip('prezzo_rounded:Q', title='Prezzo', format='.1f'),
+                            alt.Tooltip('frequency:Q', title='Numero Pizzerie')
+                        ]
+                    ).properties(
+                        height=201,
+                        padding={"left": 0, "top": 0, "right": 0, "bottom": 0}
+                    )
+
+                    final_chart = freq_chart
+                    st.altair_chart(final_chart, use_container_width=True)
+                
+                else:  # Pizza media selected
+                    st.metric("Prezzo Medio 💸", f"{10.5} €", f"{0.1} € vs Avg. competitor", border=False)
+                    # Calculate frequency distribution
+                    prices_df['prezzo_rounded'] = (prices_df['prezzo_medio'] * 2).apply(np.floor) / 2
+                    avg_price_freq = prices_df.groupby('prezzo_rounded').size().reset_index(name='frequency')
+                    avg_price_freq['prezzo_rounded'] += 0.0001
+
+                    my_avg_price = prices_df.loc[prices_df['is_mine'], 'prezzo_rounded'].iloc[0] + 0.0001
+
+                    # Create frequency chart
+                    avg_freq_chart = alt.Chart(avg_price_freq).mark_bar(
+                        opacity=1
+                    ).encode(
+                        x=alt.X('prezzo_rounded:Q',
+                                bin=alt.Bin(step=0.5),
+                                axis=alt.Axis(grid=False),
+                                title=None),
+                        y=alt.Y('frequency:Q',
+                                axis=alt.Axis(grid=False, labels=False),
+                                title=None),
+                        color=alt.condition(
+                            alt.datum.prezzo_rounded == my_avg_price,
+                            alt.value("#4285F4"),      
+                            alt.value("#808080B6")    
+                        ),
+                        tooltip=[
+                            alt.Tooltip('prezzo_rounded:Q', title='Prezzo', format='.1f'),
+                            alt.Tooltip('frequency:Q', title='Numero Pizzerie')
+                        ]
+                    ).properties(
+                        height=201,
+                        padding={"left": 0, "top": 0, "right": 0, "bottom": 0}
+                    )
+
+                    # Display the chart
+                    st.altair_chart(avg_freq_chart, use_container_width=True)
