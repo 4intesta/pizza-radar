@@ -99,47 +99,50 @@ trending_pizzeria = pd.DataFrame({
     ]]
 })
 
-def render_pizzeria_card(title, pizzeria_data, emoji, metric_suffix):
-    """
-    Render a pizzeria card with scrollable comments
-    
-    Parameters:
-    - title: str - Title to display (e.g., "La Migliore")
-    - pizzeria_data: DataFrame row - Contains pizzeria information
-    - emoji: str - Emoji to display in title
-    - metric_suffix: str - Text to append after the rating
-    """
-    with st.container(border=True, height=230):
-        # Fixed header
-        st.markdown(f"""
-            <div style='position: sticky; top: 0; background-color: white; padding: 5px 0; z-index: 1;'>
-                <h3 style='margin: 0; font-size: 16px;'>{emoji} {title}</h3>
-                <p style='margin: 5px 0; font-size: 15px;'>
-                    {pizzeria_data['name'].iloc[0]}<br>
-                    <span style='font-size: 14px;'>
-                        {pizzeria_data['rating'].iloc[0]} ⭐️ {metric_suffix}
-                    </span>
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+
+
+def render_pizzeria_card(title, pizzeria_data, emoji, metric_suffix, height=260):
+    comments_html = "".join([
+        f"""
+        <div style="border:1px solid #eee; border-radius:8px; padding:6px; margin-bottom:6px; font-size:12px;">
+            <div>{c['text']}</div>
+            <div style="color:gray; font-size:11px; margin-top:2px;">{c['author']} • {c['date']}</div>
+        </div>
+        """
+        for c in pizzeria_data['top_comments'].iloc[0]
+    ])
+
+    # La card è più bassa di 12px rispetto all'iframe
+    card_html = f"""
+    <div style="border:1px solid #ddd; border-radius:12px;
+                height:{height-12}px; display:flex; flex-direction:column;
+                box-sizing:border-box; overflow:hidden; background:#fff;">
         
-        # Scrollable comments section
-        with st.container(height=170):
-            for comment in pizzeria_data['top_comments'].iloc[0]:
-                with st.container(border=True):
-                    st.markdown(f"""
-                        <div style='font-size: 12px; line-height: 1.2;'>
-                            <p style='margin: 0; padding: 0;'>{comment['text']}</p>
-                            <p style='margin: 2px 0 0 0; padding: 0; color: gray;'>
-                                {comment['author']} • {comment['date']}
-                            </p>
-                        </div>
-                    """, unsafe_allow_html=True)
+        <!-- Header -->
+        <div style="padding:10px; background:#fff; border-bottom:1px solid #ddd;">
+            <div style="font-size:16px; font-weight:600; margin-bottom:4px;">{emoji} {title}</div>
+            <div style="font-size:14px; line-height:1.25;">
+                {pizzeria_data['name'].iloc[0]}<br>
+                <span>{pizzeria_data['rating'].iloc[0]} ⭐️ {metric_suffix}</span>
+            </div>
+        </div>
+
+        <!-- Commenti scrollabili -->
+        <div style="padding:8px 10px 10px 10px; flex:1 1 auto; overflow-y:auto;">
+            {comments_html}
+        </div>
+    </div>
+    """
+
+    # iframe leggermente più alto per lasciare aria sopra e sotto
+    st.components.v1.html(f"<div style='padding:4px'>{card_html}</div>", height=height, scrolling=False)
+
 
 tab1, tab2, tab3 = st.tabs([" 💬 Cosa dicono in Giro ", " 🔍 Dentro la nostra Offerta ", " 🍕 Confrontiamoci con pizzerie in zona "])
 
 with tab1:
-    col1, col2, col3 = st.columns([1, 1, 1])
+    
+    col1, col2, col3 = st.columns([10, 10, 10])
 
     with col1:
         render_pizzeria_card(
