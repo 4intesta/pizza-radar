@@ -86,8 +86,10 @@ with tab1:
     col1, col2, col3 = st.columns([1.35, 1.8, 2.3], vertical_alignment="bottom")
 
     with col1:
-        st.metric("Rating", f"{4.5} ⭐️", f"{-0.1} vs competitor", border=True)
-        st.metric("Trend Rating", f"{4.6} ✨", f"{0.1} su mese precedente", border=True)
+        with st.container(border=True):
+            st.metric("Rating", f"{4.5} ⭐️", f"{-0.1} vs competitor")
+            st.text("")
+            st.metric("Ultimi 30 giorni", f"{4.6} ✨", f"{0.1} su mese precedente")
 
     with col2:
         with st.container(border=True):
@@ -126,7 +128,7 @@ with tab1:
                 abs_value="abs(datum.value)",
                 tipo="datum.variable == 'positive' ? 'Positiva' : 'Negativa'"  # Add mapping here
             ).properties(
-                height=127,
+                height=110,
                 padding={"left": 0, "top": 0, "right": 0, "bottom": 0}
             )
             st.altair_chart(chart, use_container_width=True)
@@ -191,8 +193,8 @@ with tab1:
                                   values=['Google', 'Deliveroo', 'TripAdvisor']  # Only show these in legend
                               )),
                 tooltip=[
-                    alt.Tooltip('mese_full:N', title='Periodo'),
                     alt.Tooltip('Platform:N', title='Piattaforma'),
+                    alt.Tooltip('mese_full:N', title='Periodo'),
                     alt.Tooltip('Reviews:Q', title='Recensioni', format='.0f')
                 ]
             ).configure_axis(
@@ -201,7 +203,7 @@ with tab1:
                 orient='top',
                 title=None
             ).properties(
-                height=200,
+                height=184,
                 padding={"left": -5, "top": -5, "right": 0, "bottom": 0}
             )
 
@@ -459,411 +461,131 @@ with tab2:
 
     tab_food, tab_service, tab_ambience, tab_quality_price = st.tabs(["🍕 Cibo", "🤵 Servizio ", "🪑 Atmosfera", "💰 Qualità/Prezzo"])
 
-    with tab_food:
-        col1, col2 = st.columns([3, 3])  # Define columns first
-        
+
+    #TODO: forse ci sarebbe da riformattare gli assi dei 2 grafici in modo che la dimensione degli assi non cambi a seconda della tab
+
+    def render_tab(prices_df, months, month_map, col_prefix, label):
+    # Get current month
+        current_month = pd.Timestamp.now().strftime("%b")[:3].title()
+        month_mapping = {
+            "Jan": "Gen", "Feb": "Feb", "Mar": "Mar", "Apr": "Apr",
+            "May": "Mag", "Jun": "Giu", "Jul": "Lug", "Aug": "Ago",
+            "Sep": "Set", "Oct": "Ott", "Nov": "Nov", "Dec": "Dic"
+        }
+        current_month = month_mapping[current_month]
+        current_month_idx = months.index(current_month)
+
+        # Create ordered list of last 6 months ending with current month
+        if current_month_idx >= 5:
+            rolling_months = months[current_month_idx - 5: current_month_idx + 1]
+        else:
+            rolling_months = months[current_month_idx - 5:] + months[:current_month_idx + 1]
+
+        col1, col2 = st.columns([1, 1])
+
         with col1:
             with st.container(border=True):
-                # Get my pizzeria's food ratings
-                my_ratings = prices_df[prices_df['is_mine']][['rating_cibo_' + m for m in months]].iloc[0]
-                
-                # Create DataFrame for the line chart
+                # Get ratings for current category
+                my_ratings = prices_df[prices_df['is_mine']][[f"{col_prefix}_{m}" for m in rolling_months]].iloc[0]
                 ratings_data = pd.DataFrame({
-                    'mese': months,
-                    'rating_food': my_ratings.values
+                    'mese': rolling_months,
+                    'rating': my_ratings.values
                 })
                 ratings_data['mese_full'] = ratings_data['mese'].map(month_map)
-                
-                # Calculate current rating and trend
+
                 current_rating = my_ratings.values[-1]
                 previous_rating = my_ratings.values[-2]
                 rating_trend = current_rating - previous_rating
                 
-                # Display metric with current rating and trend
-                st.metric("Rating Cibo", 
-                            f"{current_rating:.1f} ⭐️", 
-                            f"{rating_trend:+.1f} vs mese precedente",
-                            delta_color="normal")
+                st.metric(f"Rating {label}",
+                        f"{current_rating:.1f} ⭐️",
+                        f"{rating_trend:+.1f} vs mese precedente",
+                        delta_color="normal")
 
-                # Create Altair line chart
+                # Calculate minimum rating across all categories
+                categories = ['cibo', 'servizio', 'atmosfera', 'qualita_prezzo']
+                all_ratings = []
+                for category in categories:
+                    category_ratings = prices_df[prices_df['is_mine']][[f"rating_{category}_{m}" for m in rolling_months]].iloc[0]
+                    all_ratings.extend(category_ratings.values)
+                min_rating = min(all_ratings)
+
                 line_chart = alt.Chart(ratings_data).mark_line(
-                    point={
-                        "filled": False,
-                        "fill": "white",
-                        "size": 100
-                    }
+                    point={"filled": False, "fill": "white", "size": 100}
                 ).encode(
-                    x=alt.X('mese:O', 
-                        title=None,
-                        axis=alt.Axis(
-                            labelAngle=0,
-                            grid=False,
-                            labelPadding=10
-                        ),
-                        sort=months),
-                    y=alt.Y('rating_food:Q',
-                        title=None,
-                        scale=alt.Scale(domain=[3.5, 5]),  # Adjusted scale for better visualization
-                        axis=alt.Axis(grid=False)),
-                    color=alt.value("#4285F4"),  # Fixed color
+                    x=alt.X('mese:O', title=None,
+                            axis=alt.Axis(labelAngle=0, grid=False, labelPadding=30),
+                            sort=rolling_months),
+                    y=alt.Y('rating:Q', title=None,
+                            scale=alt.Scale(domain=[min_rating-0.2, 5]),
+                            axis=alt.Axis(grid=False)),
+                    color=alt.value("#4285F4"),
                     tooltip=[
                         alt.Tooltip('mese_full:N', title='Periodo'),
-                        alt.Tooltip('rating_food:Q', title='Rating Cibo', format='.1f')
+                        alt.Tooltip('rating:Q', title=f'Rating {label}', format='.1f')
                     ]
-                ).properties(
-                    height=200,
-                    padding={"left": -5, "top": -5, "right": 0, "bottom": 0}
-                )
-
-                # Render the chart
+                ).properties(height=150, padding={"left": 5, "top": 5, "right": 0, "bottom": 5})
+                
                 st.altair_chart(line_chart, use_container_width=True)
+
         with col2:
             with st.container(border=True):
-                # Get my pizzeria's food ratings for current month
-                my_rating = prices_df.loc[prices_df['is_mine'], 'rating_cibo_Dic'].iloc[0]
+                my_rating = prices_df.loc[prices_df['is_mine'], f"{col_prefix}_Dic"].iloc[0]
+                competitor_ratings = prices_df.loc[~prices_df['is_mine'], f"{col_prefix}_Dic"]
+                avg_competitor_rating = competitor_ratings.mean()
                 
-                # Get competitor ratings
-                competitor_ratings = prices_df.loc[~prices_df['is_mine'], 'rating_cibo_Dic']
-                avg_competitor_rating = competitor_ratings.mean();
-                
-                # Display metric
-                st.metric("Rating Cibo", 
-                        f"{my_rating:.1f} ⭐️", 
+                st.metric(f"Rating {label}",
+                        f"{my_rating:.1f} ⭐️",
                         f"{(my_rating - avg_competitor_rating):.2f} vs Avg. competitor",
                         delta_color="normal")
-                
-                # Prepare data for histogram
-                prices_df['rating_rounded'] = (prices_df['rating_cibo_Dic'] * 2).apply(np.floor) / 2
+
+                # Update rating rounding to 0.2 steps
+                prices_df['rating_rounded'] = (prices_df[f"{col_prefix}_Dic"] * 5).apply(np.floor) / 5
                 rating_freq = prices_df.groupby('rating_rounded').size().reset_index(name='frequency')
-                rating_freq['rating_rounded'] += 0.0001  # Avoid floating point comparison issues
-                
+                rating_freq['rating_rounded'] += 0.0001
                 my_rating_rounded = prices_df.loc[prices_df['is_mine'], 'rating_rounded'].iloc[0] + 0.0001
-                
-                # Create histogram chart
-                freq_chart = alt.Chart(rating_freq).mark_bar(
-                    opacity=1
-                ).encode(
-                    x=alt.X('rating_rounded:Q',
+
+                # Get minimum rating for dynamic scale
+                min_rating_bin = rating_freq['rating_rounded'].min()
+
+                freq_chart = alt.Chart(rating_freq).mark_bar(opacity=1).encode(
+                    x=alt.X('rating_rounded:Q', 
                             title=None,
-                            bin=alt.Bin(step=0.5),
-                            scale=alt.Scale(domain=[3.5, 5]),
-                            axis=alt.Axis(grid=False)),
-                    y=alt.Y('frequency:Q',
+                            bin=alt.Bin(step=0.2),
+                            scale=alt.Scale(domain=[min_rating_bin, 5.0001]),
+                            axis=alt.Axis(
+                                grid=False,
+                                values=list(np.arange(min_rating_bin, 5.1, 0.2))
+                            )),
+                    y=alt.Y('frequency:Q', 
                             title=None,
                             axis=alt.Axis(grid=False, labels=False)),
                     color=alt.condition(
                         alt.datum.rating_rounded == my_rating_rounded,
-                        alt.value("#4285F4"),  # Color for my pizzeria
-                        alt.value("#808080B6")  # Color for competitors
-                    ),
+                        alt.value("#4285F4"), 
+                        alt.value("#808080B6")),
                     tooltip=[
                         alt.Tooltip('rating_rounded:Q', title='Rating', format='.1f'),
                         alt.Tooltip('frequency:Q', title='Numero Pizzerie')
                     ]
                 ).properties(
-                    height=188,
+                    height=150, 
                     padding={"left": 5, "top": 0, "right": 5, "bottom": 0}
                 )
-                
-                # Display the chart
+
                 st.altair_chart(freq_chart, use_container_width=True)
 
+    with tab_food:
+        render_tab(prices_df, months, month_map, "rating_cibo", "Cibo")
 
     with tab_service:
-        col1, col2 = st.columns([3, 3])
-        
-        with col1:
-            with st.container(border=True):
-                # Get my pizzeria's service ratings
-                my_ratings = prices_df[prices_df['is_mine']][['rating_servizio_' + m for m in months]].iloc[0]
-                
-                # Create DataFrame for the line chart
-                ratings_data = pd.DataFrame({
-                    'mese': months,
-                    'rating_service': my_ratings.values
-                })
-                ratings_data['mese_full'] = ratings_data['mese'].map(month_map)
-                
-                # Calculate current rating and trend
-                current_rating = my_ratings.values[-1]
-                previous_rating = my_ratings.values[-2]
-                rating_trend = current_rating - previous_rating
-                
-                st.metric("Rating Servizio", 
-                        f"{current_rating:.1f} ⭐️", 
-                        f"{rating_trend:+.1f} vs mese precedente",
-                        delta_color="normal")
-
-                line_chart = alt.Chart(ratings_data).mark_line(
-                    point={"filled": False, "fill": "white", "size": 100}
-                ).encode(
-                    x=alt.X('mese:O', 
-                        title=None,
-                        axis=alt.Axis(labelAngle=0, grid=False, labelPadding=10),
-                        sort=months),
-                    y=alt.Y('rating_service:Q',
-                        title=None,
-                        scale=alt.Scale(domain=[3.5, 5]),
-                        axis=alt.Axis(grid=False)),
-                    color=alt.value("#4285F4"),
-                    tooltip=[
-                        alt.Tooltip('mese_full:N', title='Periodo'),
-                        alt.Tooltip('rating_service:Q', title='Rating Servizio', format='.1f')
-                    ]
-                ).properties(
-                    height=200,
-                    padding={"left": -5, "top": -5, "right": 0, "bottom": 0}
-                )
-
-                st.altair_chart(line_chart, use_container_width=True)
-        
-        with col2:
-            with st.container(border=True):
-                # Get my pizzeria's service ratings for current month
-                my_rating = prices_df.loc[prices_df['is_mine'], 'rating_servizio_Dic'].iloc[0]
-                
-                # Get competitor ratings
-                competitor_ratings = prices_df.loc[~prices_df['is_mine'], 'rating_servizio_Dic']
-                avg_competitor_rating = competitor_ratings.mean()
-                
-                # Display metric
-                st.metric("Rating Servizio", 
-                        f"{my_rating:.1f} ⭐️", 
-                        f"{(my_rating - avg_competitor_rating):.2f} vs Avg. competitor",
-                        delta_color="normal")
-                
-                # Prepare data for histogram
-                prices_df['rating_rounded'] = (prices_df['rating_servizio_Dic'] * 2).apply(np.floor) / 2
-                rating_freq = prices_df.groupby('rating_rounded').size().reset_index(name='frequency')
-                rating_freq['rating_rounded'] += 0.0001
-                
-                my_rating_rounded = prices_df.loc[prices_df['is_mine'], 'rating_rounded'].iloc[0] + 0.0001
-                
-                # Create histogram chart
-                freq_chart = alt.Chart(rating_freq).mark_bar(
-                    opacity=1
-                ).encode(
-                    x=alt.X('rating_rounded:Q',
-                            title=None,
-                            bin=alt.Bin(step=0.5),
-                            scale=alt.Scale(domain=[3.5, 5]),
-                            axis=alt.Axis(grid=False)),
-                    y=alt.Y('frequency:Q',
-                            title=None,
-                            axis=alt.Axis(grid=False, labels=False)),
-                    color=alt.condition(
-                        alt.datum.rating_rounded == my_rating_rounded,
-                        alt.value("#4285F4"),  # Color for my pizzeria
-                        alt.value("#808080B6")  # Color for competitors
-                    ),
-                    tooltip=[
-                        alt.Tooltip('rating_rounded:Q', title='Rating', format='.1f'),
-                        alt.Tooltip('frequency:Q', title='Numero Pizzerie')
-                    ]
-                ).properties(
-                    height=188,
-                    padding={"left": 5, "top": 0, "right": 5, "bottom": 0}
-                )
-                
-                # Display the chart
-                st.altair_chart(freq_chart, use_container_width=True)
-
+        render_tab(prices_df, months, month_map, "rating_servizio", "Servizio")
 
     with tab_ambience:
-        col1, col2 = st.columns([3, 3])
-        
-        with col1:
-            with st.container(border=True):
-                # Get my pizzeria's ambience ratings
-                my_ratings = prices_df[prices_df['is_mine']][['rating_atmosfera_' + m for m in months]].iloc[0]
-                
-                ratings_data = pd.DataFrame({
-                    'mese': months,
-                    'rating_ambience': my_ratings.values
-                })
-                ratings_data['mese_full'] = ratings_data['mese'].map(month_map)
-                
-                current_rating = my_ratings.values[-1]
-                previous_rating = my_ratings.values[-2]
-                rating_trend = current_rating - previous_rating
-                
-                st.metric("Rating Atmosfera", 
-                        f"{current_rating:.1f} ⭐️", 
-                        f"{rating_trend:+.1f} vs mese precedente",
-                        delta_color="normal")
-
-                line_chart = alt.Chart(ratings_data).mark_line(
-                    point={"filled": False, "fill": "white", "size": 100}
-                ).encode(
-                    x=alt.X('mese:O', 
-                        title=None,
-                        axis=alt.Axis(labelAngle=0, grid=False, labelPadding=10),
-                        sort=months),
-                    y=alt.Y('rating_ambience:Q',
-                        title=None,
-                        scale=alt.Scale(domain=[3.5, 5]),
-                        axis=alt.Axis(grid=False)),
-                    color=alt.value("#4285F4"),
-                    tooltip=[
-                        alt.Tooltip('mese_full:N', title='Periodo'),
-                        alt.Tooltip('rating_ambience:Q', title='Rating Atmosfera', format='.1f')
-                    ]
-                ).properties(
-                    height=200,
-                    padding={"left": -5, "top": -5, "right": 0, "bottom": 0}
-                )
-
-                st.altair_chart(line_chart, use_container_width=True)
-
-        with col2:
-            with st.container(border=True):
-                # Get my pizzeria's ambience ratings for current month
-                my_rating = prices_df.loc[prices_df['is_mine'], 'rating_atmosfera_Dic'].iloc[0]
-                
-                # Get competitor ratings
-                competitor_ratings = prices_df.loc[~prices_df['is_mine'], 'rating_atmosfera_Dic']
-                avg_competitor_rating = competitor_ratings.mean()
-                
-                # Display metric
-                st.metric("Rating Atmosfera", 
-                        f"{my_rating:.1f} ⭐️", 
-                        f"{(my_rating - avg_competitor_rating):.2f} vs Avg. competitor",
-                        delta_color="normal")
-                
-                # Prepare data for histogram
-                prices_df['rating_rounded'] = (prices_df['rating_atmosfera_Dic'] * 2).apply(np.floor) / 2
-                rating_freq = prices_df.groupby('rating_rounded').size().reset_index(name='frequency')
-                rating_freq['rating_rounded'] += 0.0001
-                
-                my_rating_rounded = prices_df.loc[prices_df['is_mine'], 'rating_rounded'].iloc[0] + 0.0001
-                
-                # Create histogram chart
-                freq_chart = alt.Chart(rating_freq).mark_bar(
-                    opacity=1
-                ).encode(
-                    x=alt.X('rating_rounded:Q',
-                            title=None,
-                            bin=alt.Bin(step=0.5),
-                            scale=alt.Scale(domain=[3.5, 5]),
-                            axis=alt.Axis(grid=False)),
-                    y=alt.Y('frequency:Q',
-                            title=None,
-                            axis=alt.Axis(grid=False, labels=False)),
-                    color=alt.condition(
-                        alt.datum.rating_rounded == my_rating_rounded,
-                        alt.value("#4285F4"),  # Color for my pizzeria
-                        alt.value("#808080B6")  # Color for competitors
-                    ),
-                    tooltip=[
-                        alt.Tooltip('rating_rounded:Q', title='Rating', format='.1f'),
-                        alt.Tooltip('frequency:Q', title='Numero Pizzerie')
-                    ]
-                ).properties(
-                    height=188,
-                    padding={"left": 5, "top": 0, "right": 5, "bottom": 0}
-                )
-                
-                # Display the chart
-                st.altair_chart(freq_chart, use_container_width=True)
-
+        render_tab(prices_df, months, month_map, "rating_atmosfera", "Atmosfera")
 
     with tab_quality_price:
-        col1, col2 = st.columns([3, 3])
-        
-        with col1:
-            with st.container(border=True):
-                # Get my pizzeria's quality/price ratings
-                my_ratings = prices_df[prices_df['is_mine']][['rating_qualita_prezzo_' + m for m in months]].iloc[0]
-                
-                ratings_data = pd.DataFrame({
-                    'mese': months,
-                    'rating_quality_price': my_ratings.values
-                })
-                ratings_data['mese_full'] = ratings_data['mese'].map(month_map)
-                
-                current_rating = my_ratings.values[-1]
-                previous_rating = my_ratings.values[-2]
-                rating_trend = current_rating - previous_rating
-                
-                st.metric("Rating Qualità/Prezzo", 
-                        f"{current_rating:.1f} ⭐️", 
-                        f"{rating_trend:+.1f} vs mese precedente",
-                        delta_color="normal")
-
-                line_chart = alt.Chart(ratings_data).mark_line(
-                    point={"filled": False, "fill": "white", "size": 100}
-                ).encode(
-                    x=alt.X('mese:O', 
-                        title=None,
-                        axis=alt.Axis(labelAngle=0, grid=False, labelPadding=10),
-                        sort=months),
-                    y=alt.Y('rating_quality_price:Q',
-                        title=None,
-                        scale=alt.Scale(domain=[3.5, 5]),
-                        axis=alt.Axis(grid=False)),
-                    color=alt.value("#4285F4"),
-                    tooltip=[
-                        alt.Tooltip('mese_full:N', title='Periodo'),
-                        alt.Tooltip('rating_quality_price:Q', title='Rating Qualità/Prezzo', format='.1f')
-                    ]
-                ).properties(
-                    height=200,
-                    padding={"left": -5, "top": -5, "right": 0, "bottom": 0}
-                )
-
-                st.altair_chart(line_chart, use_container_width=True)
-
-        with col2:
-            with st.container(border=True):
-                # Get my pizzeria's quality/price ratings for current month
-                my_rating = prices_df.loc[prices_df['is_mine'], 'rating_qualita_prezzo_Dic'].iloc[0]
-                
-                # Get competitor ratings
-                competitor_ratings = prices_df.loc[~prices_df['is_mine'], 'rating_qualita_prezzo_Dic']
-                avg_competitor_rating = competitor_ratings.mean()
-                
-                # Display metric
-                st.metric("Rating Qualità/Prezzo", 
-                        f"{my_rating:.1f} ⭐️", 
-                        f"{(my_rating - avg_competitor_rating):.2f} vs Avg. competitor",
-                        delta_color="normal")
-                
-                # Prepare data for histogram
-                prices_df['rating_rounded'] = (prices_df['rating_qualita_prezzo_Dic'] * 2).apply(np.floor) / 2
-                rating_freq = prices_df.groupby('rating_rounded').size().reset_index(name='frequency')
-                rating_freq['rating_rounded'] += 0.0001
-                
-                my_rating_rounded = prices_df.loc[prices_df['is_mine'], 'rating_rounded'].iloc[0] + 0.0001
-                
-                # Create histogram chart
-                freq_chart = alt.Chart(rating_freq).mark_bar(
-                    opacity=1
-                ).encode(
-                    x=alt.X('rating_rounded:Q',
-                            title=None,
-                            bin=alt.Bin(step=0.5),
-                            scale=alt.Scale(domain=[3.5, 5]),
-                            axis=alt.Axis(grid=False)),
-                    y=alt.Y('frequency:Q',
-                            title=None,
-                            axis=alt.Axis(grid=False, labels=False)),
-                    color=alt.condition(
-                        alt.datum.rating_rounded == my_rating_rounded,
-                        alt.value("#4285F4"),  # Color for my pizzeria
-                        alt.value("#808080B6")  # Color for competitors
-                    ),
-                    tooltip=[
-                        alt.Tooltip('rating_rounded:Q', title='Rating', format='.1f'),
-                        alt.Tooltip('frequency:Q', title='Numero Pizzerie')
-                    ]
-                ).properties(
-                    height=188,
-                    padding={"left": 5, "top": 0, "right": 5, "bottom": 0}
-                )
-                
-                # Display the chart
-                st.altair_chart(freq_chart, use_container_width=True)                   
-
+        render_tab(prices_df, months, month_map, "rating_qualita_prezzo", "Qualità/Prezzo")
 
 with tab3:
     # Store selectbox value in a variable
@@ -877,18 +599,37 @@ with tab3:
     
     def create_comparison_chart(prices_df, selected_pizzeria, months, category):
         """Helper function to create comparison charts with rolling 12 months"""
-        # Get current month index (assuming we're in August)
-        current_month_idx = months.index("Ago")
+        # Get current month
+        current_month = pd.Timestamp.now().strftime("%b")[:3].title()  # Get first 3 letters of month name
+        # Map Italian months
+        month_mapping = {
+            "Jan": "Gen", "Feb": "Feb", "Mar": "Mar", "Apr": "Apr",
+            "May": "Mag", "Jun": "Giu", "Jul": "Lug", "Aug": "Ago",
+            "Sep": "Set", "Oct": "Ott", "Nov": "Nov", "Dec": "Dic"
+        }
+        current_month = month_mapping[current_month]
+        current_month_idx = months.index(current_month)
         
         # Create ordered list of last 12 months ending with current month
         rolling_months = months[current_month_idx - 11:] + months[:current_month_idx + 1]
         
-        # Get ratings for rolling 12 months
+        # Calculate minimum rating across ALL categories and ALL months
+        categories = ['cibo', 'servizio', 'atmosfera', 'qualita_prezzo']
+        all_ratings = []
+        
+        for cat in categories:
+            # Get ratings from my pizzeria
+            my_ratings = prices_df[prices_df['is_mine']][[f'rating_{cat}_{m}' for m in rolling_months]].iloc[0]
+            # Get ratings from selected competitor
+            competitor_ratings = prices_df[prices_df['pizzeria'] == selected_pizzeria][[f'rating_{cat}_{m}' for m in rolling_months]].iloc[0]
+            all_ratings.extend(my_ratings.values)
+            all_ratings.extend(competitor_ratings.values)
+        
+        global_min_rating = min(all_ratings)
+        
+        # Get ratings for current category
         my_ratings = prices_df[prices_df['is_mine']][[f'rating_{category}_{m}' for m in rolling_months]].iloc[0]
         competitor_ratings = prices_df[prices_df['pizzeria'] == selected_pizzeria][[f'rating_{category}_{m}' for m in rolling_months]].iloc[0]
-        
-        # Calculate minimum rating from both pizzerias
-        min_rating = min(min(my_ratings), min(competitor_ratings))
         
         comparison_df = pd.DataFrame({
             'mese': rolling_months,
@@ -902,12 +643,9 @@ with tab3:
             value_name='Rating'
         )
         
+        # Update y-axis scale to use global minimum
         return alt.Chart(comparison_melted).mark_line(
-            point={
-                    "filled": False,
-                    "fill": "white",
-                    "size": 100
-                }
+            point={"filled": False, "fill": "white", "size": 100}
         ).encode(
             x=alt.X('mese:O',
                    title=None,
@@ -915,24 +653,24 @@ with tab3:
                        labelAngle=0,
                        grid=False
                    ),
-                   sort=rolling_months),  # Use rolling_months for proper ordering
+                   sort=rolling_months),
             y=alt.Y('Rating:Q',
-                   scale=alt.Scale(domain=[min_rating, 5]),  # Use calculated min_rating
+                   scale=alt.Scale(domain=[global_min_rating-0.2, 5]),
                    title=None,
-                   axis=alt.Axis(grid=False)),
+                   axis=alt.Axis(grid=True)),
             color=alt.Color('Pizzeria:N',
                           scale=alt.Scale(
                               domain=['La Mia Pizzeria', 'Competitor'],
                               range=['#F12929', '#4285F4']
                           )),
             tooltip=[
-                alt.Tooltip('mese:N', title='📅 Periodo'),
-                alt.Tooltip('Pizzeria:N', title='🏪 Pizzeria'),
+                alt.Tooltip('Pizzeria:N', title='Pizzeria'),
+                alt.Tooltip('mese:N', title='Periodo'),
                 alt.Tooltip('Rating:Q', title='⭐ Rating', format='.1f')
             ]
         ).properties(
-            height=300,
-            padding={"left": 0, "top": 20, "right": 0, "bottom": 0}
+            height=227,
+            padding={"left": 5, "top": 0, "right": 5, "bottom": 5}
         ).configure_axis(
             labelFontSize=12
         ).configure_legend(
@@ -949,26 +687,29 @@ with tab3:
             "💰 Qualità/Prezzo"
         ])
         
-        with tab_comparison_cibo:
-            if selected_pizzeria:
+        def render_comparison_tab(prices_df, selected_pizzeria, months, category, label):
+            """Helper function to render comparison tab layout"""
+            col1, col2 = st.columns([1.35, 4.1])
+    
+            with col1:    
                 with st.container(border=True):
-                    chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'cibo')
+                    st.metric(f"Rating {label}", f"{4.5} ⭐️", f"{-0.1} vs competitor")
+                    st.text("")
+                    st.metric("Ultimi 30 giorni", f"{4.6} ✨", f"{0.1} su mese precedente")
+    
+            with col2:
+                with st.container(border=True):
+                    chart = create_comparison_chart(prices_df, selected_pizzeria, months, category)
                     st.altair_chart(chart, use_container_width=True)
+
+        with tab_comparison_cibo:
+            render_comparison_tab(prices_df, selected_pizzeria, months, 'cibo', 'Cibo')
             
         with tab_comparison_servizio:
-            if selected_pizzeria:
-                with st.container(border=True):
-                    chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'servizio')
-                    st.altair_chart(chart, use_container_width=True)
-
+            render_comparison_tab(prices_df, selected_pizzeria, months, 'servizio', 'Servizio')
+            
         with tab_comparison_atmosfera:
-            if selected_pizzeria:
-                with st.container(border=True):
-                    chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'atmosfera')
-                    st.altair_chart(chart, use_container_width=True)
-
+            render_comparison_tab(prices_df, selected_pizzeria, months, 'atmosfera', 'Atmosfera')
+            
         with tab_comparison_qualita_prezzo:
-            if selected_pizzeria:
-                with st.container(border=True):
-                    chart = create_comparison_chart(prices_df, selected_pizzeria, months, 'qualita_prezzo')
-                    st.altair_chart(chart, use_container_width=True)
+            render_comparison_tab(prices_df, selected_pizzeria, months, 'qualita_prezzo', 'Qualità/Prezzo')
