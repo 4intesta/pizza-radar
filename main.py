@@ -11,6 +11,66 @@ import pydeck as pdk
 
 st.set_page_config(layout="wide")
 
+# --- Responsive: mostra dashboard solo su schermi larghi; su telefono vertical mostra immagine + messaggio ---
+import os, base64, pathlib
+
+def _find_first_asset_image():
+    assets_dir = os.path.join(os.path.dirname(__file__), "assets")
+    if os.path.isdir(assets_dir):
+        for fn in sorted(os.listdir(assets_dir)):
+            if fn.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif")):
+                return os.path.join(assets_dir, fn)
+    return None
+
+_asset_img = _find_first_asset_image()
+_img_b64 = ""
+_img_mime = "image/png"
+if _asset_img:
+    try:
+        _ext = pathlib.Path(_asset_img).suffix.lower()
+        if _ext in [".jpg", ".jpeg"]:
+            _img_mime = "image/jpeg"
+        elif _ext == ".webp":
+            _img_mime = "image/webp"
+        elif _ext == ".gif":
+            _img_mime = "image/gif"
+        with open(_asset_img, "rb") as _f:
+            _img_b64 = base64.b64encode(_f.read()).decode()
+    except Exception:
+        _img_b64 = ""
+
+# CSS + HTML: mobile portrait -> nasconde tutto tranne #mobile-block; se landscape o desktop mostra normale
+_threshold_px = 700  # soglia larghezza (modificabile)
+_styled = f"""
+<style>
+  /* mobile block hidden by default */
+  #mobile-block{{display:none; align-items:center; justify-content:center; text-align:center; padding:20px; box-sizing:border-box;}}
+  #mobile-block img{{max-width:80%; height:auto; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.12);}}
+  #mobile-block .msg{{margin-top:12px; color:#222; font-size:16px; max-width:420px;}}
+
+  /* when device is narrow AND portrait: hide all app content except our mobile block */
+  @media (max-width:{_threshold_px}px) and (orientation: portrait) {{
+    .stApp > *:not(#mobile-block) {{ display: none !important; }}
+    #mobile-block {{ display:flex !important; min-height:100vh; flex-direction:column; gap:12px; }}
+    /* ensure page doesn't scroll weirdly */
+    html, body {{ height:100%; overflow: hidden; }}
+  }}
+
+  /* when narrow but landscape, show dashboard normally */
+  @media (max-width:{_threshold_px}px) and (orientation: landscape) {{
+    #mobile-block {{ display: none !important; }}
+    .stApp > *:not(#mobile-block) {{ display: block !important; }}
+    html, body {{ height: auto; overflow: auto; }}
+  }}
+</style>
+<div id="mobile-block" aria-hidden="false">
+  {"<img src='data:" + _img_mime + ";base64," + _img_b64 + "' alt='mobile-warning'/>" if _img_b64 else ""}
+  <div class="msg">Schermo troppo piccolo, per experience migliore prova a ruotare lo schermo o connetterti da computer</div>
+</div>
+"""
+st.markdown(_styled, unsafe_allow_html=True)
+# --- end responsive block ---
+
 nomePizzeria = "La Mia Pizzeria"
 st.title(nomePizzeria)
 
