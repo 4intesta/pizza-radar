@@ -8,12 +8,11 @@ from numpy.random import default_rng as rng
 from random import uniform
 
 import pydeck as pdk
+import os, base64, pathlib
 
 st.set_page_config(layout="wide")
 
 # --- Responsive: mostra dashboard solo su schermi larghi; su telefono vertical mostra immagine + messaggio ---
-import os, base64, pathlib
-
 def _find_first_asset_image():
     assets_dir = os.path.join(os.path.dirname(__file__), "assets")
     if os.path.isdir(assets_dir):
@@ -39,38 +38,86 @@ if _asset_img:
     except Exception:
         _img_b64 = ""
 
-# CSS + HTML: mobile portrait -> nasconde tutto tranne #mobile-block; se landscape o desktop mostra normale
 _threshold_px = 700  # soglia larghezza (modificabile)
-_styled = f"""
+
+_responsive_html = """
 <style>
-  /* mobile block hidden by default */
-  #mobile-block{{display:none; align-items:center; justify-content:center; text-align:center; padding:20px; box-sizing:border-box;}}
-  #mobile-block img{{max-width:80%; height:auto; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.12);}}
-  #mobile-block .msg{{margin-top:12px; color:#222; font-size:16px; max-width:420px;}}
-
-  /* when device is narrow AND portrait: hide app content inside the main block-container except our mobile-block */
-  @media (max-width:{_threshold_px}px) and (orientation: portrait) {{
-    /* Hide all regular content inside Streamlit's block-container */
-    .block-container > *:not(#mobile-block) {{ display: none !important; }}
-    /* Show our block and center it */
-    #mobile-block {{ display:flex !important; min-height:100vh; flex-direction:column; gap:12px; align-items:center; justify-content:center; }}
-    /* avoid page scrolling weirdness */
-    html, body {{ height:100%; overflow: hidden; }}
-  }}
-
-  /* when narrow but landscape, show dashboard normally */
-  @media (max-width:{_threshold_px}px) and (orientation: landscape) {{
-    #mobile-block {{ display: none !important; }}
-    .block-container > *:not(#mobile-block) {{ display: block !important; }}
-    html, body {{ height: auto; overflow: auto; }}
-  }}
+  #mobile-block{display:none; align-items:center; justify-content:center; text-align:center; padding:20px; box-sizing:border-box;}
+  #mobile-block img{max-width:80%; height:auto; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.12);}
+  #mobile-block .msg{margin-top:12px; color:#222; font-size:16px; max-width:420px;}
 </style>
+
 <div id="mobile-block" aria-hidden="false">
-  {"<img src='data:" + _img_mime + ";base64," + _img_b64 + "' alt='mobile-warning'/>" if _img_b64 else ""}
+""" + (("<img src='data:" + _img_mime + ";base64," + _img_b64 + "' alt='mobile-warning'/>") if _img_b64 else "") + """
   <div class="msg">Schermo troppo piccolo, per experience migliore prova a ruotare lo schermo o connetterti da computer</div>
 </div>
+
+<script>
+(function(){
+  const THRESHOLD = """ + str(_threshold_px) + """;
+  const mobile = document.getElementById('mobile-block');
+  let hiddenNodes = [];
+
+  function hideAllExceptMobile(){
+    if(!mobile) return;
+    const allowed = new Set();
+    let el = mobile;
+    while(el){
+      allowed.add(el);
+      el = el.parentElement;
+    }
+    const all = Array.from(document.body.querySelectorAll("*"));
+    hiddenNodes = [];
+    all.forEach(node => {
+      if(!allowed.has(node) && !node.contains(mobile) && node !== mobile){
+        if(node.tagName && node.tagName.toLowerCase() === 'script') return;
+        try {
+          node.dataset._prevDisplay = node.style.display || "";
+          node.style.display = "none";
+          hiddenNodes.push(node);
+        } catch(e){}
+      }
+    });
+    mobile.style.display = "flex";
+    mobile.style.minHeight = "100vh";
+    mobile.style.flexDirection = "column";
+    mobile.style.alignItems = "center";
+    mobile.style.justifyContent = "center";
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+  }
+
+  function restoreAll(){
+    if(!mobile) return;
+    hiddenNodes.forEach(node => {
+      try{
+        node.style.display = node.dataset._prevDisplay || "";
+        delete node.dataset._prevDisplay;
+      }catch(e){}
+    });
+    hiddenNodes = [];
+    mobile.style.display = "none";
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
+  }
+
+  function update(){
+    const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+    const isNarrow = window.innerWidth <= THRESHOLD;
+    if(isPortrait && isNarrow){
+      hideAllExceptMobile();
+    } else {
+      restoreAll();
+    }
+  }
+
+  window.addEventListener('resize', update);
+  window.addEventListener('orientationchange', () => setTimeout(update, 150));
+  setTimeout(update, 350);
+})();
+</script>
 """
-st.markdown(_styled, unsafe_allow_html=True)
+st.markdown(_responsive_html, unsafe_allow_html=True)
 # --- end responsive block ---
 
 nomePizzeria = "La Mia Pizzeria"
