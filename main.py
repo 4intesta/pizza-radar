@@ -2,6 +2,8 @@ import streamlit as st
 import os, base64
 from pathlib import Path
 
+#TODO: add popup of comments when pressing here and there
+
 st.set_page_config(layout="wide")
 
 def get_img_as_base64(file_name):
@@ -213,6 +215,7 @@ trending_pizzeria = pd.DataFrame({
 
 tab1, tab2, tab3 = st.tabs([" 🔍 Dentro la nostra Offerta ", "  💬 Cosa si dice in Giro  ", " 🍕 Confrontiamoci con pizzerie in zona "])
 
+#TODO: add leadboards
 with tab2:
     
     df = pd.DataFrame({
@@ -321,6 +324,7 @@ with tab2:
             # Combine my pizzeria with competitors
             all_pizzerias = pd.concat([my_pizzeria_data, competitors_df])
 
+            #TODO: fix colors of heatmap
             st.pydeck_chart(
                 pdk.Deck(
                     map_style=None,
@@ -1114,6 +1118,7 @@ with tab3:
             "💰 Qualità/Prezzo"
         ])
         
+        #TODO: aggiungere ragno
         def render_comparison_tab(prices_df, selected_pizzeria, months, category, label):
             """Helper function to render comparison tab layout"""
             col1, col2 = st.columns([1.35, 4.1])
