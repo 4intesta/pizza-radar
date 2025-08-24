@@ -1,4 +1,79 @@
 import streamlit as st
+import os, base64
+
+# Questa parte deve stare all'inizio del file, prima di qualsiasi altro st.
+st.set_page_config(layout="wide")
+
+# Funzione per caricare l'immagine dalla cartella assets
+def get_img_as_base64(file_path):
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return ""
+
+# Trova la prima immagine nella cartella assets
+def find_image_in_assets():
+    assets_dir = os.path.join(os.path.dirname(__file__), "assets")
+    if os.path.isdir(assets_dir):
+        for file in os.listdir(assets_dir):
+            if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                return os.path.join(assets_dir, file)
+    return None
+
+# Carica l'immagine
+img_path = find_image_in_assets()
+img_base64 = get_img_as_base64(img_path) if img_path else ""
+
+# CSS per il responsive design
+st.markdown(f"""
+    <style>
+        /* Nascondi tutto il contenuto su schermi piccoli in modalità portrait */
+        @media (max-width: 768px) and (orientation: portrait) {{
+            .main .block-container {{ display: none !important; }}
+            #mobile-warning {{ 
+                display: flex !important;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                padding: 20px;
+                text-align: center;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: white;
+                z-index: 9999;
+            }}
+        }}
+        /* Mostra il contenuto normale su schermi larghi o in landscape */
+        @media (min-width: 769px), (orientation: landscape) {{
+            #mobile-warning {{ display: none !important; }}
+            .main .block-container {{ display: block !important; }}
+        }}
+        #mobile-warning img {{
+            max-width: 80%;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }}
+        #mobile-warning p {{
+            font-size: 16px;
+            color: #333;
+            max-width: 80%;
+            margin: 0 auto;
+        }}
+    </style>
+    <div id="mobile-warning">
+        <img src="data:image/png;base64,{img_base64}" alt="Warning Image">
+        <p> Schermo troppo piccolo, per avere una migliore experience e vedere questo bel ragazzo come si deve, prova a ruotare lo schermo o a connetterti da computer </p>
+    </div>
+""", unsafe_allow_html=True)
+
+# Resto del codice della dashboard...
+
+import streamlit as st
 from streamlit_echarts import st_echarts
 import pandas as pd
 import altair as alt
@@ -9,116 +84,6 @@ from random import uniform
 
 import pydeck as pdk
 import os, base64, pathlib
-
-st.set_page_config(layout="wide")
-
-# --- Responsive: mostra dashboard solo su schermi larghi; su telefono vertical mostra immagine + messaggio ---
-def _find_first_asset_image():
-    assets_dir = os.path.join(os.path.dirname(__file__), "assets")
-    if os.path.isdir(assets_dir):
-        for fn in sorted(os.listdir(assets_dir)):
-            if fn.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif")):
-                return os.path.join(assets_dir, fn)
-    return None
-
-_asset_img = _find_first_asset_image()
-_img_b64 = ""
-_img_mime = "image/png"
-if _asset_img:
-    try:
-        _ext = pathlib.Path(_asset_img).suffix.lower()
-        if _ext in [".jpg", ".jpeg"]:
-            _img_mime = "image/jpeg"
-        elif _ext == ".webp":
-            _img_mime = "image/webp"
-        elif _ext == ".gif":
-            _img_mime = "image/gif"
-        with open(_asset_img, "rb") as _f:
-            _img_b64 = base64.b64encode(_f.read()).decode()
-    except Exception:
-        _img_b64 = ""
-
-_threshold_px = 700  # soglia larghezza (modificabile)
-
-_responsive_html = """
-<style>
-  #mobile-block{display:none; align-items:center; justify-content:center; text-align:center; padding:20px; box-sizing:border-box;}
-  #mobile-block img{max-width:80%; height:auto; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.12);}
-  #mobile-block .msg{margin-top:12px; color:#222; font-size:16px; max-width:420px;}
-</style>
-
-<div id="mobile-block" aria-hidden="false">
-""" + (("<img src='data:" + _img_mime + ";base64," + _img_b64 + "' alt='mobile-warning'/>") if _img_b64 else "") + """
-  <div class="msg">Schermo troppo piccolo, per experience migliore prova a ruotare lo schermo o connetterti da computer</div>
-</div>
-
-<script>
-(function(){
-  const THRESHOLD = """ + str(_threshold_px) + """;
-  const mobile = document.getElementById('mobile-block');
-  let hiddenNodes = [];
-
-  function hideAllExceptMobile(){
-    if(!mobile) return;
-    const allowed = new Set();
-    let el = mobile;
-    while(el){
-      allowed.add(el);
-      el = el.parentElement;
-    }
-    const all = Array.from(document.body.querySelectorAll("*"));
-    hiddenNodes = [];
-    all.forEach(node => {
-      if(!allowed.has(node) && !node.contains(mobile) && node !== mobile){
-        if(node.tagName && node.tagName.toLowerCase() === 'script') return;
-        try {
-          node.dataset._prevDisplay = node.style.display || "";
-          node.style.display = "none";
-          hiddenNodes.push(node);
-        } catch(e){}
-      }
-    });
-    mobile.style.display = "flex";
-    mobile.style.minHeight = "100vh";
-    mobile.style.flexDirection = "column";
-    mobile.style.alignItems = "center";
-    mobile.style.justifyContent = "center";
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-  }
-
-  function restoreAll(){
-    if(!mobile) return;
-    hiddenNodes.forEach(node => {
-      try{
-        node.style.display = node.dataset._prevDisplay || "";
-        delete node.dataset._prevDisplay;
-      }catch(e){}
-    });
-    hiddenNodes = [];
-    mobile.style.display = "none";
-    document.documentElement.style.overflow = "";
-    document.body.style.overflow = "";
-  }
-
-  function update(){
-    const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-    const isNarrow = window.innerWidth <= THRESHOLD;
-    if(isPortrait && isNarrow){
-      hideAllExceptMobile();
-    } else {
-      restoreAll();
-    }
-  }
-
-  window.addEventListener('resize', update);
-  window.addEventListener('orientationchange', () => setTimeout(update, 150));
-  setTimeout(update, 350);
-})();
-</script>
-"""
-st.markdown(_responsive_html, unsafe_allow_html=True)
-# --- end responsive block ---
 
 nomePizzeria = "La Mia Pizzeria"
 st.title(nomePizzeria)
