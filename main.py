@@ -57,7 +57,7 @@ st.markdown(f"""
                 z-index: 9999;
             }}
         }}
-        @media (min-width: 769px), (orientation: landscape) {{
+        @media (min-width: 641px), (orientation: landscape) {{
             #mobile-warning {{ display: none !important; }}
             .main .block-container {{ display: block !important; }}
         }}
@@ -398,19 +398,21 @@ with tab2:
                 }
             ]
 
-        with st.container(border=True, height=230):
+        with st.container(border=True):
             articles = get_articles_data()
             st.metric("**Ultime Notizie**", "", "")
-            for article in articles:
-                with st.container(border=True):
-                    st.markdown(
-                        f"""
-                        <p style="font-size:14px; line-height:1.6;">
-                            {article['newspaper']}<br>
-                            {article['date']}<br>
-                            <a href="{article['link']}" style="text-decoration: none; font-style: italic;">
-                                {article['title']}
-                            </a>
+            with st.container(height=154, border=False):
+                for article in articles:
+                    with st.container(border=True):
+                        st.markdown(
+                            f"""
+                            <p style="font-size:14px; line-height:1.6;">
+                                {article['newspaper']}<br>
+                                {article['date']}<br>
+                                <a href="{article['link']}" style="text-decoration: none; font-style: italic;">
+                                    {article['title']}
+                                </a>
+                            </p>
                         </p>
                         """,
                         unsafe_allow_html=True
@@ -437,13 +439,14 @@ with tab2:
 
         pizzerias = get_new_pizzerias_data()
 
-        with st.container(border=True, height=230):
+        with st.container(border=True):
             st.metric("**Nuove pizzerie in zona**", "", "")
-            for p in pizzerias:
-                with st.container(border=True):
-                    st.markdown(
-                        f"""
-                        <p style="font-size:14px; line-height:1.6;">
+            with st.container(border=False, height=154):
+                for p in pizzerias:
+                    with st.container(border=True):
+                        st.markdown(
+                            f"""
+                            <p style="font-size:14px; line-height:1.6;">
                             <a href="{p['link']}" style="text-decoration: none; font-weight: bold;">
                                 {p['name']}
                             </a><br>
@@ -462,13 +465,13 @@ with tab2:
         
         with col1:
             st.metric(
-                "Rating Generale", 
+                "**Rating Generale**", 
                 f"{pizzeria_data['rating'].iloc[0]} ⭐️", 
                 f"{pizzeria_data['rating_trend_su_mese'].iloc[0]} su mese", 
                 border=True
             )
             st.metric(
-                "Recensioni Ricevute", 
+                "**Recensioni Ricevute**", 
                 pizzeria_data['total_reviews'].iloc[0], 
                 f"{pizzeria_data['total_reviews_trend_su_mese'].iloc[0]}  su mese", 
                 border=True
