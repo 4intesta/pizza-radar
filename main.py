@@ -937,9 +937,6 @@ with tab3:
                 # Get review numbers for both pizzerias
                 competitor_reviews = competitor_data['reviews_number_last_30_days']
 
-                print(competitor_data['reviews_number_last_30_days'])
-                print(competitor_data['reviews_number_last_60_30_days'])
-
                 st.metric(
                     "**Recensioni ultimi 30 giorni**", 
                     f"{competitor_data['reviews_number_last_30_days']}", 
