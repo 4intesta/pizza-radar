@@ -6,26 +6,30 @@ st.set_page_config(layout="wide")
 
 def get_img_as_base64(file_name):
     try:
-        # Get the directory containing the script
-        script_dir = Path(__file__).parent
-        # Construct path to assets directory
-        assets_dir = script_dir / "assets"
-        # Construct full path to image
-        image_path = assets_dir / file_name
+        # Prima prova il percorso relativo per Streamlit Cloud
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        file_paths = [
+            os.path.join(current_dir, "assets", file_name),  # Percorso standard
+            os.path.join(".", "assets", file_name),          # Percorso relativo
+            os.path.join("assets", file_name)               # Percorso diretto
+        ]
         
-        if image_path.exists():
-            with open(image_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode()
-        else:
-            st.error(f"Image not found at: {image_path}")
+        for file_path in file_paths:
+            if os.path.exists(file_path):
+                with open(file_path, "rb") as img_file:
+                    return base64.b64encode(img_file.read()).decode()
+        
+        # Se siamo qui, stampa info di debug
+        st.write("Debug - Percorsi tentati:")
+        for path in file_paths:
+            st.write(f"- {path} (exists: {os.path.exists(path)})")
+        
+        # Se non troviamo il file, usa un'immagine di fallback codificata direttamente
+        return "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAAA1BMVEX///+nxBvIAAAAAXRSTlMAQObYZgAAABxJREFUeNrtwTEBAAAAwqD1T20ND6AAAAAA4NcAEsAAAcw7WmwAAAAASUVORK5CYII="
+        
     except Exception as e:
         st.error(f"Error loading image: {e}")
-    return ""
-
-# Debug: print paths to verify
-img_path = Path(__file__).parent / "assets" / "warning.jpeg"
-st.write(f"Looking for image at: {img_path}")
-st.write(f"File exists: {img_path.exists()}")
+        return ""
 
 # Load image
 img_base64 = get_img_as_base64("warning.jpeg")
@@ -33,7 +37,6 @@ img_base64 = get_img_as_base64("warning.jpeg")
 # CSS per il responsive design
 st.markdown(f"""
     <style>
-        /* Nascondi tutto il contenuto su schermi piccoli in modalità portrait */
         @media (max-width: 768px) and (orientation: portrait) {{
             .main .block-container {{ display: none !important; }}
             #mobile-warning {{ 
@@ -53,7 +56,6 @@ st.markdown(f"""
                 z-index: 9999;
             }}
         }}
-        /* Mostra il contenuto normale su schermi larghi o in landscape */
         @media (min-width: 769px), (orientation: landscape) {{
             #mobile-warning {{ display: none !important; }}
             .main .block-container {{ display: block !important; }}
