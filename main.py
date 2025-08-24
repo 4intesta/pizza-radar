@@ -48,18 +48,20 @@ _styled = f"""
   #mobile-block img{{max-width:80%; height:auto; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.12);}}
   #mobile-block .msg{{margin-top:12px; color:#222; font-size:16px; max-width:420px;}}
 
-  /* when device is narrow AND portrait: hide all app content except our mobile block */
+  /* when device is narrow AND portrait: hide app content inside the main block-container except our mobile-block */
   @media (max-width:{_threshold_px}px) and (orientation: portrait) {{
-    .stApp > *:not(#mobile-block) {{ display: none !important; }}
-    #mobile-block {{ display:flex !important; min-height:100vh; flex-direction:column; gap:12px; }}
-    /* ensure page doesn't scroll weirdly */
+    /* Hide all regular content inside Streamlit's block-container */
+    .block-container > *:not(#mobile-block) {{ display: none !important; }}
+    /* Show our block and center it */
+    #mobile-block {{ display:flex !important; min-height:100vh; flex-direction:column; gap:12px; align-items:center; justify-content:center; }}
+    /* avoid page scrolling weirdness */
     html, body {{ height:100%; overflow: hidden; }}
   }}
 
   /* when narrow but landscape, show dashboard normally */
   @media (max-width:{_threshold_px}px) and (orientation: landscape) {{
     #mobile-block {{ display: none !important; }}
-    .stApp > *:not(#mobile-block) {{ display: block !important; }}
+    .block-container > *:not(#mobile-block) {{ display: block !important; }}
     html, body {{ height: auto; overflow: auto; }}
   }}
 </style>
