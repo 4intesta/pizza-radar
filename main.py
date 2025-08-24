@@ -1,28 +1,34 @@
 import streamlit as st
 import os, base64
+from pathlib import Path
 
-# Questa parte deve stare all'inizio del file, prima di qualsiasi altro st.
 st.set_page_config(layout="wide")
 
-# Funzione per caricare l'immagine dalla cartella assets
-def get_img_as_base64(file_path):
-    if os.path.exists(file_path):
-        with open(file_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
+def get_img_as_base64(file_name):
+    try:
+        # Get the directory containing the script
+        script_dir = Path(__file__).parent
+        # Construct path to assets directory
+        assets_dir = script_dir / "assets"
+        # Construct full path to image
+        image_path = assets_dir / file_name
+        
+        if image_path.exists():
+            with open(image_path, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode()
+        else:
+            st.error(f"Image not found at: {image_path}")
+    except Exception as e:
+        st.error(f"Error loading image: {e}")
     return ""
 
-# Trova la prima immagine nella cartella assets
-def find_image_in_assets():
-    assets_dir = os.path.join(os.path.dirname(__file__), "assets")
-    if os.path.isdir(assets_dir):
-        for file in os.listdir(assets_dir):
-            if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                return os.path.join(assets_dir, file)
-    return None
+# Debug: print paths to verify
+img_path = Path(__file__).parent / "assets" / "warning.jpeg"
+st.write(f"Looking for image at: {img_path}")
+st.write(f"File exists: {img_path.exists()}")
 
-# Carica l'immagine
-img_path = find_image_in_assets()
-img_base64 = get_img_as_base64(img_path) if img_path else ""
+# Load image
+img_base64 = get_img_as_base64("warning.jpeg")
 
 # CSS per il responsive design
 st.markdown(f"""
@@ -66,8 +72,8 @@ st.markdown(f"""
         }}
     </style>
     <div id="mobile-warning">
-        <img src="data:image/png;base64,{img_base64}" alt="Warning Image">
-        <p> Schermo troppo piccolo, per avere una migliore experience e vedere questo bel ragazzo come si deve, prova a ruotare lo schermo o a connetterti da computer </p>
+        <img src="data:image/jpeg;base64,{img_base64}" alt="Warning Image">
+        <p>Schermo troppo piccolo, per experience migliore prova a ruotare lo schermo o connetterti da computer</p>
     </div>
 """, unsafe_allow_html=True)
 
