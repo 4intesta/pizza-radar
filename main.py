@@ -302,42 +302,48 @@ with tab2:
                         """,
                         unsafe_allow_html=True
                     )
-    
-    col1, col2, col3 = st.columns([10, 10, 10])
 
-    with col1:
-        with st.container(border=True):
-            st.metric("**🏆 La più apprezzata**", "", help="Pizzeria con il punteggio più alto")
-            st.metric(best_pizzeria['name'].iloc[0], f"{best_pizzeria['rating'].iloc[0]}", f"{best_pizzeria['trend'].iloc[0]}")
-            with st.container(height=150, border=False):
-                for comment in best_pizzeria['top_comments'].iloc[0]:
-                    with st.container(border=True):
-                        st.caption(f"{comment['author']} • {comment['date']}")
-                        st.write(comment['text'])
-                st.text("")
+    tab_migliore, tab_peggiore, tab_di_moda = st.tabs([" 🏆 La più apprezzata ", "  👎 La meno amata  ", "  📈 Di Moda "])
 
-    with col2:
-        with st.container(border=True):
-            st.metric("**👎 La meno amata**", "")
-            st.metric(worst_pizzeria['name'].iloc[0], f"{worst_pizzeria['rating'].iloc[0]}", f"{worst_pizzeria['trend'].iloc[0]}")
-            with st.container(height=150, border=False):
-                for comment in worst_pizzeria['top_comments'].iloc[0]:
-                    with st.container(border=True):
-                        st.caption(f"{comment['author']} • {comment['date']}")
-                        st.write(comment['text'])
-                st.text("")
+    def render_review_tab(pizzeria_data, tab_type):
+        """Helper function to render review tabs (migliore, peggiore, di moda)"""
+        st.text(pizzeria_data['name'].iloc[0])
+        col1, col2 = st.columns([1.35, 4.1])
+        
+        with col1:
+            st.metric(
+                "Rating Generale", 
+                f"{pizzeria_data['rating'].iloc[0]} ⭐️", 
+                f"{pizzeria_data['trend'].iloc[0]}", 
+                border=True
+            )
+            st.metric(
+                "Recensioni Ricevute", 
+                pizzeria_data['total_reviews'].iloc[0], 
+                f"{pizzeria_data['trend'].iloc[0]}", 
+                border=True
+            )
+        
+        with col2:
+            with st.container(height=283, border=True):
+                st.metric("**Alcune recensioni rilevanti**", "", "")
+                with st.container(height=205, border=False):
+                    for comment in pizzeria_data['top_comments'].iloc[0]:
+                        with st.container(border=True):
+                            source = "Google" if comment['rating'] > 3 else "TripAdvisor"  # Example logic
+                            st.caption(f"{comment['author']} • {comment['date']} • {source} • {'⭐' * comment['rating']}")
+                            st.write(comment['text'])
+                        st.text("")
 
-    with col3:
-        with st.container(border=True):
-            st.metric("**📈 Di Moda**", "")
-            st.metric(trending_pizzeria['name'].iloc[0], f"{trending_pizzeria['rating'].iloc[0]}", f"{trending_pizzeria['trend'].iloc[0]}")
-            with st.container(height=150, border=False):
-                for comment in trending_pizzeria['top_comments'].iloc[0]:
-                    with st.container(border=True):
-                        st.caption(f"{comment['author']} • {comment['date']}")
-                        st.write(comment['text'])
-                st.text("")
+    # Then replace the existing tab content with:
+    with tab_migliore:
+        render_review_tab(best_pizzeria, 'migliore')
 
+    with tab_peggiore:
+        render_review_tab(worst_pizzeria, 'peggiore')
+
+    with tab_di_moda:
+        render_review_tab(trending_pizzeria, 'di_moda')
 
 with tab1:
     col1, col2, col3 = st.columns([1.35, 1.8, 2.3], vertical_alignment="bottom")
