@@ -14,6 +14,14 @@ st.set_page_config(layout="wide")
 nomePizzeria = "La Mia Pizzeria"
 st.title(nomePizzeria)
 
+with st.expander("💡 Analisi AI", expanded=True):
+    with st.container(border=True):
+        st.badge("Punto di forza", icon="💪", color="green")
+    with st.container(border=True):
+        st.badge("Punto debole", icon="⚠️", color="orange")
+    with st.container(border=True):
+        st.badge("Suggerimenti", icon="🛠️", color="blue")
+
 # Add these DataFrames before tab1
 best_pizzeria = pd.DataFrame({
     'name': ['Pizzeria Da Michele'],
@@ -26,19 +34,19 @@ best_pizzeria = pd.DataFrame({
             'author': 'Marco R.',
             'date': '20 Ago 2025',
             'rating': 5,
-            'text': '⭐️⭐️⭐️⭐️⭐️ La migliore pizza napoletana in zona. Impasto perfetto.'
+            'text': 'La migliore pizza napoletana in zona. Impasto perfetto.'
         },
         {
             'author': 'Laura B.',
             'date': '18 Ago 2025',
             'rating': 5,
-            'text': '⭐️⭐️⭐️⭐️⭐️ Vale ogni centesimo. La marinara è sublime!'
+            'text': 'Vale ogni centesimo. La marinara è sublime!'
         },
         {
             'author': 'Giovanni M.',
             'date': '15 Ago 2025',
             'rating': 5,
-            'text': '⭐️⭐️⭐️⭐️⭐️ Finalmente una vera pizza napoletana.'
+            'text': 'Finalmente una vera pizza napoletana.'
         }
     ]]
 })
@@ -54,19 +62,19 @@ worst_pizzeria = pd.DataFrame({
             'author': 'Paolo M.',
             'date': '19 Ago 2025',
             'rating': 1,
-            'text': '⭐️ Tempi di attesa lunghissimi e pizza fredda.'
+            'text': 'Tempi di attesa lunghissimi e pizza fredda.'
         },
         {
             'author': 'Sara T.',
             'date': '17 Ago 2025',
             'rating': 2,
-            'text': '⭐️⭐️ Servizio scadente e prezzi troppo alti.'
+            'text': 'Servizio scadente e prezzi troppo alti.'
         },
         {
             'author': 'Luigi B.',
             'date': '16 Ago 2025',
             'rating': 2,
-            'text': '⭐️⭐️ Qualità in netto peggioramento.'
+            'text': 'Qualità in netto peggioramento.'
         }
     ]]
 })
@@ -82,92 +90,29 @@ trending_pizzeria = pd.DataFrame({
             'author': 'Elena F.',
             'date': '21 Ago 2025',
             'rating': 5,
-            'text': '⭐️⭐️⭐️⭐️⭐️ Che miglioramento! Nuova gestione fantastica.'
+            'text': 'Che miglioramento! Nuova gestione fantastica.'
         },
         {
             'author': 'Roberto D.',
             'date': '19 Ago 2025',
             'rating': 4,
-            'text': '⭐️⭐️⭐️⭐️ Grande svolta, ora è tra le migliori.'
+            'text': 'Grande svolta, ora è tra le migliori.'
         },
         {
             'author': 'Maria C.',
             'date': '17 Ago 2025',
             'rating': 4,
-            'text': '⭐️⭐️⭐️⭐️ Finalmente un servizio eccellente.'
+            'text': 'Finalmente un servizio eccellente.'
         }
     ]]
 })
 
 
+#TODO: forse sostituire tab1 e tab2
+tab1, tab2, tab3 = st.tabs([" 🔍 Dentro la nostra Offerta ", "  💬 Cosa si dice in Giro  ", " 🍕 Confrontiamoci con pizzerie in zona "])
 
-def render_pizzeria_card(title, pizzeria_data, emoji, metric_suffix, height=260):
-    comments_html = "".join([
-        f"""
-        <div style="border:1px solid #eee; border-radius:8px; padding:6px; margin-bottom:6px; font-size:12px;">
-            <div>{c['text']}</div>
-            <div style="color:gray; font-size:11px; margin-top:2px;">{c['author']} • {c['date']}</div>
-        </div>
-        """
-        for c in pizzeria_data['top_comments'].iloc[0]
-    ])
-
-    # La card è più bassa di 12px rispetto all'iframe
-    card_html = f"""
-    <div style="border:1px solid #ddd; border-radius:12px;
-                height:{height-12}px; display:flex; flex-direction:column;
-                box-sizing:border-box; overflow:hidden; background:#fff;">
-        
-        <!-- Header -->
-        <div style="padding:10px; background:#fff; border-bottom:1px solid #ddd;">
-            <div style="font-size:16px; font-weight:600; margin-bottom:4px;">{emoji} {title}</div>
-            <div style="font-size:14px; line-height:1.25;">
-                {pizzeria_data['name'].iloc[0]}<br>
-                <span>{pizzeria_data['rating'].iloc[0]} ⭐️ {metric_suffix}</span>
-            </div>
-        </div>
-
-        <!-- Commenti scrollabili -->
-        <div style="padding:8px 10px 10px 10px; flex:1 1 auto; overflow-y:auto;">
-            {comments_html}
-        </div>
-    </div>
-    """
-
-    # iframe leggermente più alto per lasciare aria sopra e sotto
-    st.components.v1.html(f"<div style='padding:4px'>{card_html}</div>", height=height, scrolling=False)
-
-
-tab1, tab2, tab3 = st.tabs([" 💬 Cosa dicono in Giro ", " 🔍 Dentro la nostra Offerta ", " 🍕 Confrontiamoci con pizzerie in zona "])
-
-with tab1:
+with tab2:
     
-    col1, col2, col3 = st.columns([10, 10, 10])
-
-    with col1:
-        render_pizzeria_card(
-            "La Migliore",
-            best_pizzeria,
-            "😍",
-            ""
-        )
-
-    with col2:
-        render_pizzeria_card(
-            "La Peggiore",
-            worst_pizzeria,
-            "🤮",
-            ""
-        )
-
-    with col3:
-        render_pizzeria_card(
-            "Di Moda",
-            trending_pizzeria,
-            "💪",
-            f"(trend: {trending_pizzeria['trend'].iloc[0]})"
-        )
-
     df = pd.DataFrame({
                 "mese": ["Mag", "Giu", "Lug", "Ago"],
                 "positive": [3,6,2,10],
@@ -206,6 +151,7 @@ with tab1:
 
     # Define base ratings for all categories
     base_ratings = {
+        'generale': 3.0,
         'cibo': 4.2,
         'servizio': 4.0,
         'atmosfera': 4.1,
@@ -213,14 +159,14 @@ with tab1:
     }
 
     # Generate ratings for all categories in a single loop
-    for category in ['cibo', 'servizio', 'atmosfera', 'qualita_prezzo']:
+    for category in ['generale', 'cibo', 'servizio', 'atmosfera', 'qualita_prezzo']:
         for month in months:
             ratings = [
                 round(base_ratings[category] + np.random.normal(0, 0.2), 1)
                 for _ in range(len(prices_df))
             ]
             # Clip ratings between 3.5 and 5.0
-            ratings = np.clip(ratings, 3.5, 5.0)
+            ratings = np.clip(ratings, 1, 5.0)
             prices_df[f'rating_{category}_{month}'] = ratings
 
     print(prices_df)
@@ -239,7 +185,7 @@ with tab1:
     col4, col5 = st.columns([7, 3], vertical_alignment="bottom")
     with col4:
         with st.container(border=True):
-            st.metric("Le Pizze Più Votate Qui Attorno (nell'ultimo mese)", "", "")
+            st.metric("**Le Pizze Più Votate Qui Attorno (nell'ultimo mese)**", "", "")
 
             ##TODO: aggiungere la mia pizzeria alla mappa.
 
@@ -304,7 +250,7 @@ with tab1:
 
         with st.container(border=True, height=230):
             articles = get_articles_data()
-            st.metric("Ultime Notizie", "", "")
+            st.metric("**Ultime Notizie**", "", "")
             for article in articles:
                 with st.container(border=True):
                     st.markdown(
@@ -342,7 +288,7 @@ with tab1:
         pizzerias = get_new_pizzerias_data()
 
         with st.container(border=True, height=230):
-            st.metric("Nuove pizzerie in zona", "", "")
+            st.metric("**Nuove pizzerie in zona**", "", "")
             for p in pizzerias:
                 with st.container(border=True):
                     st.markdown(
@@ -356,15 +302,51 @@ with tab1:
                         """,
                         unsafe_allow_html=True
                     )
+    
+    col1, col2, col3 = st.columns([10, 10, 10])
 
-with tab2:
+    with col1:
+        with st.container(border=True):
+            st.metric("**🏆 La più apprezzata**", "", help="Pizzeria con il punteggio più alto")
+            st.metric(best_pizzeria['name'].iloc[0], f"{best_pizzeria['rating'].iloc[0]}", f"{best_pizzeria['trend'].iloc[0]}")
+            with st.container(height=150, border=False):
+                for comment in best_pizzeria['top_comments'].iloc[0]:
+                    with st.container(border=True):
+                        st.caption(f"{comment['author']} • {comment['date']}")
+                        st.write(comment['text'])
+                st.text("")
+
+    with col2:
+        with st.container(border=True):
+            st.metric("**👎 La meno amata**", "")
+            st.metric(worst_pizzeria['name'].iloc[0], f"{worst_pizzeria['rating'].iloc[0]}", f"{worst_pizzeria['trend'].iloc[0]}")
+            with st.container(height=150, border=False):
+                for comment in worst_pizzeria['top_comments'].iloc[0]:
+                    with st.container(border=True):
+                        st.caption(f"{comment['author']} • {comment['date']}")
+                        st.write(comment['text'])
+                st.text("")
+
+    with col3:
+        with st.container(border=True):
+            st.metric("**📈 Di Moda**", "")
+            st.metric(trending_pizzeria['name'].iloc[0], f"{trending_pizzeria['rating'].iloc[0]}", f"{trending_pizzeria['trend'].iloc[0]}")
+            with st.container(height=150, border=False):
+                for comment in trending_pizzeria['top_comments'].iloc[0]:
+                    with st.container(border=True):
+                        st.caption(f"{comment['author']} • {comment['date']}")
+                        st.write(comment['text'])
+                st.text("")
+
+
+with tab1:
     col1, col2, col3 = st.columns([1.35, 1.8, 2.3], vertical_alignment="bottom")
 
     with col1:
         with st.container(border=True):
-            st.metric("Rating", f"{4.5} ⭐️", f"{-0.1} vs competitor")
+            st.metric("**Rating**", f"{4.5} ⭐️", f"{-0.1} vs competitor")
             st.text("")
-            st.metric("Ultimi 30 giorni", f"{4.6} ✨", f"{0.1} su mese precedente")
+            st.metric("**Ultimi 30 giorni**", f"{4.6} ✨", f"{0.1} su mese precedente")
 
     with col2:
         with st.container(border=True):
@@ -374,7 +356,7 @@ with tab2:
             labelValueRecensioniMensili = df['positive'].iloc[-1]-df['negative'].iloc[-1]
             valueRecensioniMensiliScorsoMese = df['positive'].iloc[-2]-df['negative'].iloc[-2]
             monthlyDifference =  (labelValueRecensioniMensili/valueRecensioniMensiliScorsoMese)*100
-            st.metric("Recensioni Mese Corrente", f"{labelValueRecensioniMensili}", f"{monthlyDifference}% su {df['mese'].iloc[-2]}")
+            st.metric("**Recensioni Mese Corrente**", f"{labelValueRecensioniMensili}", f"{monthlyDifference}% su {df['mese'].iloc[-2]}")
 
             chart = alt.Chart(df).mark_bar().encode(
                 x=alt.X('mese:O', 
@@ -412,8 +394,8 @@ with tab2:
         with st.container(border=True):
             
             # Replace markdown with metric
-            st.metric("Recensioni per Piattaforma", "", "")
-            
+            st.metric("**Recensioni per Piattaforma**", "", "")
+
             # Create sample data for reviews by platform
             line_data = pd.DataFrame({
                 'mese': ["Set", "Ott", "Nov", "Dic"],
@@ -442,7 +424,8 @@ with tab2:
                     "filled": False,
                     "fill": "white",
                     "size": 100
-                }
+                },
+                opacity=0.9
             ).encode(
                 x=alt.X('mese:O', 
                        title=None,
@@ -503,7 +486,7 @@ with tab2:
             avg_competitor_pizza = prices_df.loc[~prices_df['is_mine'], 'prezzo_medio'].mean()
 
             if chart_type == "Quanto Costa la Tua Margherita?":
-                st.metric("Prezzo Margherita 🌼", f"{my_margherita_price} €", f"{my_margherita_price - avg_competitor_margherita:.2f} € vs Avg. competitor", delta_color="off", border=False)
+                st.metric("**Prezzo Margherita 🌼**", f"{my_margherita_price} €", f"{my_margherita_price - avg_competitor_margherita:.2f} € vs Avg. competitor", delta_color="off", border=False)
                 prices_df['prezzo_rounded'] = (prices_df['prezzo_margherita'] * 2).apply(np.floor) / 2
                 price_freq = prices_df.groupby('prezzo_rounded').size().reset_index(name='frequency')
                 price_freq['prezzo_rounded'] += 0.0001
@@ -540,7 +523,7 @@ with tab2:
                 st.altair_chart(final_chart, use_container_width=True)
             
             else:  # Pizza media selected
-                st.metric("Prezzo Pizza in media 🍕", f"{my_pizza_media} €", f"{my_pizza_media - avg_competitor_pizza:.2f} € vs Avg. competitor", delta_color="off", border=False)
+                st.metric("**Prezzo Pizza in media 🍕**", f"{my_pizza_media} €", f"{my_pizza_media - avg_competitor_pizza:.2f} € vs Avg. competitor", delta_color="off", border=False)
                 # Calculate frequency distribution
                 prices_df['prezzo_rounded'] = (prices_df['prezzo_medio'] * 2).apply(np.floor) / 2
                 avg_price_freq = prices_df.groupby('prezzo_rounded').size().reset_index(name='frequency')
@@ -584,27 +567,31 @@ with tab2:
         avg_competitor_wait = prices_df.loc[~prices_df['is_mine'], 'wait_time'].mean()
 
         # Update metrics with real data
-        st.metric("Nel Menu", 
+        st.metric("**Nel Menu**", 
                     f"{my_data['menu_items']} pizze", 
                     f"{my_data['menu_items'] - avg_competitor_menu:.1f} vs competitor", 
                     border=True)
         
         with st.container(border=True): 
             # Update the metrics to remove the division by 60 since data is already in hours
-            st.metric("Permanenza media", 
+            st.metric("**Permanenza media**", 
                         f"{my_data['avg_stay_duration']:.1f} ore", 
                         f"{(my_data['avg_stay_duration'] - avg_competitor_stay):.2f} ore vs competitor", 
                         border=False)
-            st.metric("Prima di sedersi", 
+            st.metric("**Prima di sedersi**", 
                         f"{int(my_data['wait_time'])} min", 
                         f"{int(my_data['wait_time'] - avg_competitor_wait)} min vs competitor", 
                         border=False)
             
 
-    tab_food, tab_service, tab_ambience, tab_quality_price = st.tabs(["🍕 Cibo", "🤵 Servizio ", "🪑 Atmosfera", "💰 Qualità/Prezzo"])
+    tab_general, tab_food, tab_service, tab_ambience, tab_quality_price = st.tabs([
+    "⭐ Generale",
+    "🍕 Cibo", 
+    "🤵 Servizio ", 
+    "🪑 Atmosfera", 
+    "💰 Qualità/Prezzo"
+    ])
 
-
-    #TODO: forse ci sarebbe da riformattare gli assi dei 2 grafici in modo che la dimensione degli assi non cambi a seconda della tab
 
     def render_tab(prices_df, months, month_map, col_prefix, label):
     # Get current month
@@ -638,14 +625,14 @@ with tab2:
                 current_rating = my_ratings.values[-1]
                 previous_rating = my_ratings.values[-2]
                 rating_trend = current_rating - previous_rating
-                
-                st.metric(f"Rating {label}",
+
+                st.metric(f"**Rating {label}**",
                         f"{current_rating:.1f} ⭐️",
                         f"{rating_trend:+.1f} vs mese precedente",
                         delta_color="normal")
 
                 # Calculate minimum rating across all categories
-                categories = ['cibo', 'servizio', 'atmosfera', 'qualita_prezzo']
+                categories = ['generale', 'cibo', 'servizio', 'atmosfera', 'qualita_prezzo']
                 all_ratings = []
                 for category in categories:
                     category_ratings = prices_df[prices_df['is_mine']][[f"rating_{category}_{m}" for m in rolling_months]].iloc[0]
@@ -675,20 +662,25 @@ with tab2:
                 my_rating = prices_df.loc[prices_df['is_mine'], f"{col_prefix}_Dic"].iloc[0]
                 competitor_ratings = prices_df.loc[~prices_df['is_mine'], f"{col_prefix}_Dic"]
                 avg_competitor_rating = competitor_ratings.mean()
-                
-                st.metric(f"Rating {label}",
+
+                st.metric(f"**Rating {label}**",
                         f"{my_rating:.1f} ⭐️",
                         f"{(my_rating - avg_competitor_rating):.2f} vs Avg. competitor",
                         delta_color="normal")
 
-                # Update rating rounding to 0.2 steps
+                # Update rating rounding to 0.2 steps for all categories
+                categories = ['generale', 'cibo', 'servizio', 'atmosfera', 'qualita_prezzo']
+                all_bins = []
+                for cat in categories:
+                    rounded = (prices_df[f"rating_{cat}_Dic"] * 5).apply(np.floor) / 5
+                    all_bins.extend(rounded.tolist())
+                min_rating_bin = min(all_bins)
+
+                # Use the current category for the frequency chart
                 prices_df['rating_rounded'] = (prices_df[f"{col_prefix}_Dic"] * 5).apply(np.floor) / 5
                 rating_freq = prices_df.groupby('rating_rounded').size().reset_index(name='frequency')
                 rating_freq['rating_rounded'] += 0.0001
                 my_rating_rounded = prices_df.loc[prices_df['is_mine'], 'rating_rounded'].iloc[0] + 0.0001
-
-                # Get minimum rating for dynamic scale
-                min_rating_bin = rating_freq['rating_rounded'].min()
 
                 freq_chart = alt.Chart(rating_freq).mark_bar(opacity=1).encode(
                     x=alt.X('rating_rounded:Q', 
@@ -716,6 +708,9 @@ with tab2:
                 )
 
                 st.altair_chart(freq_chart, use_container_width=True)
+
+    with tab_general:
+        render_tab(prices_df, months, month_map, "rating_generale", "Generale")
 
     with tab_food:
         render_tab(prices_df, months, month_map, "rating_cibo", "Cibo")
@@ -756,7 +751,7 @@ with tab3:
         rolling_months = months[current_month_idx - 11:] + months[:current_month_idx + 1]
         
         # Calculate minimum rating across ALL categories and ALL months
-        categories = ['cibo', 'servizio', 'atmosfera', 'qualita_prezzo']
+        categories = ['generale', 'cibo', 'servizio', 'atmosfera', 'qualita_prezzo']
         all_ratings = []
         
         for cat in categories:
@@ -787,7 +782,8 @@ with tab3:
         
         # Update y-axis scale to use global minimum
         return alt.Chart(comparison_melted).mark_line(
-            point={"filled": False, "fill": "white", "size": 100}
+            point={"filled": False, "fill": "white", "size": 100},
+            opacity=0.9
         ).encode(
             x=alt.X('mese:O',
                    title=None,
@@ -811,8 +807,8 @@ with tab3:
                 alt.Tooltip('Rating:Q', title='⭐ Rating', format='.1f')
             ]
         ).properties(
-            height=227,
-            padding={"left": 5, "top": 0, "right": 5, "bottom": 5}
+            height=260,
+            padding={"left": 5, "top": -6, "right": 5, "bottom": 2}
         ).configure_axis(
             labelFontSize=12
         ).configure_legend(
@@ -822,7 +818,11 @@ with tab3:
     
     # Only show tabs if a pizzeria is selected
     if selected_pizzeria:
-        tab_comparison_cibo, tab_comparison_servizio, tab_comparison_atmosfera, tab_comparison_qualita_prezzo = st.tabs([
+
+        st.metric(f"**Rating**", f"{4.5} ⭐️", f"{-0.1} rispetto a noi", delta_color="inverse")
+
+        tab_comparison_general, tab_comparison_cibo, tab_comparison_servizio, tab_comparison_atmosfera, tab_comparison_qualita_prezzo = st.tabs([
+            "⭐ Generale",
             "🍕 Cibo", 
             "🤵 Servizio ", 
             "🪑 Atmosfera", 
@@ -832,18 +832,40 @@ with tab3:
         def render_comparison_tab(prices_df, selected_pizzeria, months, category, label):
             """Helper function to render comparison tab layout"""
             col1, col2 = st.columns([1.35, 4.1])
-    
+            
+            # Get current month for rolling period
+            current_month = pd.Timestamp.now().strftime("%b")[:3].title()
+            month_mapping = {
+                "Jan": "Gen", "Feb": "Feb", "Mar": "Mar", "Apr": "Apr",
+                "May": "Mag", "Jun": "Giu", "Jul": "Lug", "Aug": "Ago",
+                "Sep": "Set", "Oct": "Ott", "Nov": "Nov", "Dec": "Dic"
+            }
+            current_month = month_mapping[current_month]
+            current_month_idx = months.index(current_month)
+            rolling_months = months[current_month_idx - 11:] + months[:current_month_idx + 1]
+
+            # Get ratings for both pizzerias
+            my_ratings = prices_df[prices_df['is_mine']][[f'rating_{category}_{m}' for m in rolling_months]].iloc[0]
+            competitor_ratings = prices_df[prices_df['pizzeria'] == selected_pizzeria][[f'rating_{category}_{m}' for m in rolling_months]].iloc[0]
+            
+            # Calculate months where competitor is better
+            months_above = sum(competitor_ratings > my_ratings)
+
             with col1:    
                 with st.container(border=True):
-                    st.metric(f"Rating {label}", f"{4.5} ⭐️", f"{-0.1} vs competitor")
-                    st.text("")
-                    st.metric("Ultimi 30 giorni", f"{4.6} ✨", f"{0.1} su mese precedente")
-    
+                    st.metric(f"**Rating {label}**", f"{4.5} ⭐️", f"{-0.1} rispetto a noi", delta_color="inverse")
+                    st.metric("**Ultimi 30 giorni**", f"{4.6} ✨", f"{0.1} su mese precedente")
+                    st.metric("**Sopra di noi**", f"{months_above} {'mese' if months_above == 1 else 'mesi'}")
+
             with col2:
                 with st.container(border=True):
+                    st.metric(f"**Andamento Rating {label}**", "")
                     chart = create_comparison_chart(prices_df, selected_pizzeria, months, category)
                     st.altair_chart(chart, use_container_width=True)
 
+        with tab_comparison_general:
+            render_comparison_tab(prices_df, selected_pizzeria, months, 'generale', 'Generale')
+            
         with tab_comparison_cibo:
             render_comparison_tab(prices_df, selected_pizzeria, months, 'cibo', 'Cibo')
             
