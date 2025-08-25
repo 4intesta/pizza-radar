@@ -264,6 +264,19 @@ with tab2:
         'average_rating_qualita_prezzo_last_60_30_days': [4.5, 4.1, 4.4, 4.0, 4.3, 3.9, 4.4, 4.1, 4.0, 4.2, 4.1],
         'reviews_number_last_30_days': [42, 35, 38, 31, 36, 28, 40, 33, 30, 37, 32],  # More realistic monthly reviews
         'reviews_number_last_60_30_days': [38, 32, 35, 29, 33, 25, 37, 31, 28, 34, 30],  # Previous month's reviews
+        'weekly_reviews': [
+            [8, 7, 9, 10],  # La Mia Pizzeria
+            [6, 5, 7, 8],   # Competitor 1
+            [7, 8, 6, 9],   # Competitor 2
+            [5, 6, 4, 7],   # Competitor 3
+            [8, 7, 8, 6],   # Competitor 4
+            [4, 5, 6, 5],   # Competitor 5
+            [9, 8, 7, 8],   # Competitor 6
+            [6, 7, 8, 6],   # Competitor 7
+            [5, 4, 6, 7],   # Competitor 8
+            [7, 6, 8, 8],   # Competitor 9
+            [5, 6, 7, 6]    # Competitor 10
+        ],
         'is_mine': [True, False, False, False, False, False, False, False, False, False, False]
     })
     
@@ -306,11 +319,63 @@ with tab2:
 
     st.subheader("Panoramica Concorrenza")
 
-    col4, col5 = st.columns([7, 3], vertical_alignment="bottom")
-    with col4:
-        with st.container(border=True):
-            st.metric("**Le Pizze Più Votate Qui Attorno (nell'ultimo mese)**", "", "")
+    tab_table, tab_map = st.tabs(["Tabella", "Mappa"])
 
+    with tab_table:
+        # Configure the dataframe display
+        st.dataframe(
+            prices_df[[
+                "pizzeria",
+                "prezzo_margherita",
+                "prezzo_medio",
+                "menu_items",
+                "average_rating_generale_last_30_days",
+                "weekly_reviews"
+            ]],
+            column_config={
+                "pizzeria": st.column_config.TextColumn(
+                    "Pizzeria",
+                    width= 150,
+                    help="Nome della pizzeria"
+                ),
+                "prezzo_margherita": st.column_config.NumberColumn(
+                    "Margherita",
+                    format="euro",
+                    width=100,
+                    help="Prezzo della pizza margherita"
+                ),
+                "prezzo_medio": st.column_config.NumberColumn(
+                    "Pizza Media",
+                    format= "euro",
+                    width=100,
+                    help="Prezzo medio delle pizze"
+                ),
+                "menu_items": st.column_config.NumberColumn(
+                    "Numero Pizze",
+                    width=100,
+                    help="Numero di pizze nel menu"
+                ),
+                "average_rating_generale_last_30_days": st.column_config.ProgressColumn(
+                    "Generale ⭐️",
+                    format="%.1f",
+                    width= 100,
+                    min_value=0,
+                    max_value=5,
+                    help="Valutazione generale ultimi 30 giorni"
+                ),
+                "weekly_reviews": st.column_config.AreaChartColumn(
+                    "Recensioni Settimanali",
+                    y_min=0,
+                    help="Numero recensioni per settimana (ultime 4 settimane)"
+                )
+            },
+            hide_index=True,
+            height=400
+        )
+
+    with tab_map:
+        with st.container(border=False):
+           
             # Generate competitor data
             competitors_df = generate_competitor_data()
 
@@ -381,87 +446,6 @@ with tab2:
                 height=400
             )
 
-    with col5:
-        def get_articles_data():
-            return [
-                {
-                    "newspaper": "Gazzetta di Modena",
-                    "date": "21 Ago 2025",
-                    "title": "Le migliori 10 pizzerie di Carpi: la classifica definitiva del 2025",
-                    "link": "https://gazzettadimodena.it/news"
-                },
-                {
-                    "newspaper": "Il Resto del Carlino",
-                    "date": "19 Ago 2025",
-                    "title": "Nuove aperture in centro: le pizzerie che stanno conquistando Carpi",
-                    "link": "https://www.ilrestodelcarlino.it/news"
-                },
-                {
-                    "newspaper": "La Repubblica Bologna",
-                    "date": "15 Ago 2025",
-                    "title": "Pizza gourmet in Emilia: le tendenze del 2025",
-                    "link": "https://bologna.repubblica.it/news"
-                }
-            ]
-
-        with st.container(border=True):
-            articles = get_articles_data()
-            st.metric("**Ultime Notizie**", "", "")
-            with st.container(height=154, border=False):
-                for article in articles:
-                    with st.container(border=True):
-                        st.markdown(
-                            f"""
-                            <p style="font-size:14px; line-height:1.6;">
-                                {article['newspaper']}<br>
-                                {article['date']}<br>
-                                <a href="{article['link']}" style="text-decoration: none; font-style: italic;">
-                                    {article['title']}
-                                </a>
-                            </p>
-                        </p>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-        def get_new_pizzerias_data():
-            return [
-                {
-                    "name": "Pizzeria Nuova",
-                    "address": "Via Roma 1, Carpi",
-                    "link": "https://www.google.com/maps/place/Via+Roma+1,+Carpi+MO"
-                },
-                {
-                    "name": "Pizzeria Bella Napoli",
-                    "address": "Corso Cabassi 10, Carpi",
-                    "link": "https://www.google.com/maps/place/Corso+Cabassi+10,+Carpi+MO"
-                },
-                {
-                    "name": "Pizzeria Da Luigi",
-                    "address": "Via Cavour 22, Carpi",
-                    "link": "https://www.google.com/maps/place/Via+Cavour+22,+Carpi+MO"
-                }
-            ]
-
-        pizzerias = get_new_pizzerias_data()
-
-        with st.container(border=True):
-            st.metric("**Nuove pizzerie in zona**", "", "")
-            with st.container(border=False, height=154):
-                for p in pizzerias:
-                    with st.container(border=True):
-                        st.markdown(
-                            f"""
-                            <p style="font-size:14px; line-height:1.6;">
-                            <a href="{p['link']}" style="text-decoration: none; font-weight: bold;">
-                                {p['name']}
-                            </a><br>
-                            <span style="font-style: italic;">{p['address']}</span>
-                        </p>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
     st.divider()
 
     st.subheader("Pizzerie in evidenza")
@@ -507,6 +491,95 @@ with tab2:
 
     with tab_di_moda:
         render_review_tab(trending_pizzeria, 'di_moda')
+
+    
+    st.divider()
+
+    st.subheader("Ultime dalla Stampa")
+
+    col1, col2 = st.columns([1, 1], vertical_alignment="bottom")
+    with col1:
+        def get_articles_data():
+            return [
+                {
+                    "newspaper": "Gazzetta di Modena",
+                    "date": "21 Ago 2025",
+                    "title": "Le migliori 10 pizzerie di Carpi: la classifica definitiva del 2025",
+                    "link": "https://gazzettadimodena.it/news"
+                },
+                {
+                    "newspaper": "Il Resto del Carlino",
+                    "date": "19 Ago 2025",
+                    "title": "Nuove aperture in centro: le pizzerie che stanno conquistando Carpi",
+                    "link": "https://www.ilrestodelcarlino.it/news"
+                },
+                {
+                    "newspaper": "La Repubblica Bologna",
+                    "date": "15 Ago 2025",
+                    "title": "Pizza gourmet in Emilia: le tendenze del 2025",
+                    "link": "https://bologna.repubblica.it/news"
+                }
+            ]
+
+        with st.container(border=True):
+            articles = get_articles_data()
+            st.metric("**Ultime Notizie**", "", "")
+            with st.container(height=154, border=False):
+                for article in articles:
+                    with st.container(border=True):
+                        st.markdown(
+                            f"""
+                            <p style="font-size:14px; line-height:1.6;">
+                                {article['newspaper']}<br>
+                                {article['date']}<br>
+                                <a href="{article['link']}" style="text-decoration: none; font-style: italic;">
+                                    {article['title']}
+                                </a>
+                            </p>
+                        </p>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                        
+    with col2:
+
+        def get_new_pizzerias_data():
+            return [
+                {
+                    "name": "Pizzeria Nuova",
+                    "address": "Via Roma 1, Carpi",
+                    "link": "https://www.google.com/maps/place/Via+Roma+1,+Carpi+MO"
+                },
+                {
+                    "name": "Pizzeria Bella Napoli",
+                    "address": "Corso Cabassi 10, Carpi",
+                    "link": "https://www.google.com/maps/place/Corso+Cabassi+10,+Carpi+MO"
+                },
+                {
+                    "name": "Pizzeria Da Luigi",
+                    "address": "Via Cavour 22, Carpi",
+                    "link": "https://www.google.com/maps/place/Via+Cavour+22,+Carpi+MO"
+                }
+            ]
+
+        pizzerias = get_new_pizzerias_data()
+
+        with st.container(border=True):
+            st.metric("**Nuove pizzerie in zona**", "", "")
+            with st.container(border=False, height=154):
+                for p in pizzerias:
+                    with st.container(border=True):
+                        st.markdown(
+                            f"""
+                            <p style="font-size:14px; line-height:1.6;">
+                            <a href="{p['link']}" style="text-decoration: none; font-weight: bold;">
+                                {p['name']}
+                            </a><br>
+                            <span style="font-style: italic;">{p['address']}</span>
+                        </p>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
 with tab1:
 
@@ -1158,10 +1231,6 @@ with tab3:
             # Calculate rating differences
             rating_diff = competitor_data[historic_rating_col] - my_data[historic_rating_col]
             monthly_trend = competitor_data[last_30_rating_col] - competitor_data[last_60_30_rating_col]
-
-
-
-
             # Get ratings for both pizzerie
             my_ratings = prices_df[prices_df['is_mine']][[f'rating_{category}_{m}' for m in rolling_months]].iloc[0]
             competitor_ratings = prices_df[prices_df['pizzeria'] == selected_pizzeria][[f'rating_{category}_{m}' for m in rolling_months]].iloc[0]
