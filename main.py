@@ -304,6 +304,8 @@ with tab2:
         })
         return competitors
 
+    st.subheader("Panoramica Concorrenza")
+
     col4, col5 = st.columns([7, 3], vertical_alignment="bottom")
     with col4:
         with st.container(border=True):
@@ -459,6 +461,10 @@ with tab2:
                         """,
                         unsafe_allow_html=True
                     )
+
+    st.divider()
+
+    st.subheader("Pizzerie in evidenza")
 
     tab_migliore, tab_peggiore, tab_di_moda = st.tabs([" 🏆 La più apprezzata ", "  👎 La meno amata  ", "  📈 Di Moda "])
 
@@ -619,7 +625,6 @@ with tab1:
                         f"{int(my_data['wait_time'])} min", 
                         f"{int(my_data['wait_time'] - avg_competitor_wait)} vs competitor", 
                         border=False)
-
 
     st.divider()
 
