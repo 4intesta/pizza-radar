@@ -18,10 +18,10 @@ def small_screen_blocker():
             # Prima prova il percorso relativo per Streamlit Cloud
             current_dir = os.path.dirname(os.path.abspath(__file__))
             file_paths = [
-                os.path.join(current_dir, "Assets", file_name),  # Percorso standard
-                os.path.join(".", "Assets", file_name),          # Percorso relativo
-                os.path.join("Assets", file_name),               # Percorso diretto
-                os.path.join("pizza-radar","Assets", file_name)
+                os.path.join(current_dir, "assets", file_name),  # Percorso standard
+                os.path.join(".", "assets", file_name),          # Percorso relativo
+                os.path.join("assets", file_name),               # Percorso diretto
+                os.path.join("pizza-radar","assets", file_name)
             ]
             
             for file_path in file_paths:
