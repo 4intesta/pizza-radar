@@ -204,6 +204,7 @@ with tab2:
         return competitors
 
     st.subheader("Panoramica Concorrenza")
+    st.write("Nella tua zona ci sono diverse pizzerie. Ecco una panoramica delle loro performance e di come si posiziona la tua:")
 
     tab_table, tab_map = st.tabs(["Tabella", "Mappa"])
 
@@ -335,6 +336,7 @@ with tab2:
     st.divider()
 
     st.subheader("Pizzerie in evidenza")
+    st.write("Scopri chi sono le pizzerie più apprezzate, quelle con le recensioni peggiori e quelle in crescita nella tua zona:")
 
     tab_migliore, tab_peggiore, tab_di_moda = st.tabs([" 🏆 La più apprezzata ", "  👎 La meno amata  ", "  📈 Di Moda "])
 
@@ -382,6 +384,7 @@ with tab2:
     st.divider()
 
     st.subheader("Ultime dalla Stampa")
+    st.write("Tieniti aggiornato con le ultime notizie e scopri le nuove aperture di pizzerie nella tua zona:")
 
     col1, col2 = st.columns([1, 1], vertical_alignment="bottom")
     with col1:
@@ -470,6 +473,7 @@ with tab2:
 with tab1:
 
     st.subheader("Menu ed Esperienza Cliente")
+    st.write("Confronta i tuoi prezzi e le metriche chiave con quelli delle pizzerie concorrenti in zona:")
 
     col4, col5 = st.columns([4.1, 1.35], vertical_alignment="bottom")
     with col4:
@@ -588,6 +592,7 @@ with tab1:
     st.divider()
 
     st.subheader("Recensioni e Valutazioni")
+    st.write("Monitora le tue recensioni e confronta le valutazioni con quelle delle pizzerie concorrenti in zona:")
 
     col1, col2, col3 = st.columns([1.35, 1.8, 2.3], vertical_alignment="bottom")
 
@@ -732,7 +737,7 @@ with tab1:
             )
 
             # Render the chart
-            st.altair_chart(line_chart, use_container_width=True)            
+            st.altair_chart(line_chart, use_container_width=True)      
 
     tab_general, tab_food, tab_service, tab_ambience, tab_quality_price = st.tabs([
     "⭐ Generale",
@@ -875,6 +880,10 @@ with tab1:
         render_tab(prices_df, months, month_map, "rating_qualita_prezzo", "Qualità/Prezzo")
 
 with tab3:
+
+    st.subheader("Confronta la tua Pizzeria con altre in zona")
+    st.write("Scegli una pizzeria in zona e scopri la sua performance rispetto alla tua:")
+
     # Store selectbox value in a variable
     selected_pizzeria = st.selectbox(
         "Confronta la tua pizzera con altre in zona", 

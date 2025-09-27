@@ -87,6 +87,9 @@ def card(action_id: str, label: str, description: str, kpi_key: str, increment: 
 # -------------------------
 # MAIN APP
 # -------------------------
+st.title("Panoramica")
+st.subheader("Performance Generale")
+st.write("Qui puoi monitorare metriche chiave e consultare possibili azioni per migliorare l’esperienza dei clienti:")
 col1, col2, col3 = st.columns([1, 1, 1], vertical_alignment="bottom")
 
 # --- COL1 ---
