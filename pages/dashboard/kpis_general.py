@@ -8,33 +8,28 @@ import pandas as pd
 # -------------------------
 def donut_chart(base_value: float, added_value: float):
     """Draw a donut chart with base (dark green), added (light green), and remaining (transparent)."""
-    # Clamp values
     base_value = max(0, min(100, base_value))
-    added_value = max(0, min(100 - base_value, added_value))  # ensure total ≤ 100
+    added_value = max(0, min(100 - base_value, added_value))
 
-    # Data for the donut slices
+    # Donut slices
     source = pd.DataFrame({
         "category": ["Base", "Added", "Remaining"],
         "value": [base_value, added_value, 100 - base_value - added_value],
-        "color": ["#27AE60", "#6FCF97", "rgba(0,0,0,0)"]  # dark green, light green, transparent
+        "color": ["#27AE60", "#6FCF97", "rgba(0,0,0,0)"]
     })
 
-    # Donut (arc) layer
-    donut = alt.Chart(source).mark_arc(
-        innerRadius=50, outerRadius=75
-    ).encode(
+    donut = alt.Chart(source).mark_arc(innerRadius=50, outerRadius=75).encode(
         theta="value",
         color=alt.Color("color:N", scale=None, legend=None)
     )
 
-    # Center text layer
+    # Center text
     total = base_value + added_value
+    text_color = "#6FCF97" if added_value > 0 else "#27AE60"  # light green if added > 0
     text_source = pd.DataFrame({"text": [f"{total:.0f}%"]})
     text = alt.Chart(text_source).mark_text(
-        size=30, fontWeight="bold", color="#27AE60"
-    ).encode(
-        text="text:N"
-    )
+        size=30, fontWeight="bold", color=text_color
+    ).encode(text="text:N")
 
     return (donut + text).properties(width=170, height=170)
 
@@ -43,7 +38,6 @@ def donut_chart(base_value: float, added_value: float):
 # KPI state initialization
 # -------------------------
 def init_kpi_state(base_key: str, base_value: int):
-    """Ensure both base and added KPI states exist."""
     if base_key not in st.session_state:
         st.session_state[base_key] = base_value
     if f"{base_key}_added" not in st.session_state:
@@ -54,9 +48,7 @@ def init_kpi_state(base_key: str, base_value: int):
 # KPI update callback
 # -------------------------
 def update_added(kpi_key: str, increment: int, action_id: str):
-    """Update the 'added' KPI portion when a checkbox is toggled."""
     checked = st.session_state[f"card_checkbox_{action_id}"]
-
     if checked:
         st.session_state[f"{kpi_key}_added"] = min(
             100 - st.session_state[kpi_key],
@@ -73,7 +65,6 @@ def update_added(kpi_key: str, increment: int, action_id: str):
 # Card component
 # -------------------------
 def card(action_id: str, label: str, description: str, kpi_key: str, increment: int = 5):
-    """A card with expandable details and a checkbox."""
     with st.expander(label):
         st.markdown(f":small[{description}]")
         st.checkbox(
@@ -111,9 +102,9 @@ with col1:
         st.text("Azioni consigliate")
         with st.container(border=False, height=150):
             card(
-                action_id="id_1",
-                label="Valorizza il locale",
-                description="Gli utenti apprezzano l'atmosfera del tuo locale, condividi foto e storie che mettano in risalto questo aspetto.",
+                "id_1",
+                "Valorizza il locale",
+                "Gli utenti apprezzano l'atmosfera del tuo locale, condividi foto e storie che mettano in risalto questo aspetto.",
                 kpi_key="allineamento_percezioni_kpi",
                 increment=5
             )
@@ -190,6 +181,8 @@ with col3:
                 kpi_key="performance_pizzeria_kpi",
                 increment=5
             )
+
+        
 st.divider()
 st.subheader("Punti di Forza e Debolezza")
 st.write("Qui puoi vedere i punti di forza e le aree di miglioramento del tuo locale, basati sulle recensioni dei clienti:")
