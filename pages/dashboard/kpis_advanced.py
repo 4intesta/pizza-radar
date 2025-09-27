@@ -9,31 +9,7 @@ from numpy.random import default_rng as rng
 from random import uniform
 import pydeck as pdk
 
-with st.expander("💡 Analisi AI", expanded=False):
-    with st.container(border=True):
-        st.badge("Punto di forza", icon="💪", color="green")
-        st.markdown(
-            "La tua pizzeria si distingue per un rating generale eccellente di 4.3⭐️, superando di 0.3 punti la media dei competitor. "
-            "L'efficienza del servizio è particolarmente notevole, con tempi di attesa di soli 5 minuti, posizionandoti tra le più veloci della zona. "
-            "Il menu particolarmente variegato, che offre 45 diverse pizze rispetto alla media di 39, garantisce un'ampia scelta ai clienti."
-        )
-    
-    with st.container(border=True):
-        st.badge("Punto debole", icon="⚠️", color="orange")
-        st.markdown(
-            "Il prezzo medio delle pizze di €12.50, superiore di €1.20 rispetto ai competitor, potrebbe influenzare la percezione del rapporto qualità-prezzo. "
-            "Si registra inoltre un calo significativo del 30% nelle recensioni su TripAdvisor nell'ultimo mese. "
-            "Il rating dell'atmosfera ha mostrato un trend negativo negli ultimi 3 mesi, con una diminuzione di 0.2 punti."
-        )
-    
-    with st.container(border=True):
-        st.badge("Suggerimenti", icon="🛠️", color="blue")
-        st.markdown(
-            "Per migliorare ulteriormente le performance, suggeriamo di introdurre offerte infrasettimanali per bilanciare i prezzi più elevati. "
-            "È consigliabile implementare un sistema di reminder post-visita per incentivare le recensioni su TripAdvisor. "
-            "Le recensioni suggeriscono la necessità di un refresh dell'ambiente del locale. "
-            "Infine, un'analisi dei dati delle vendite dell'ultimo trimestre potrebbe permettere di ottimizzare il menu, rimuovendo le 5 pizze meno ordinate."
-        )
+st.title("Approfondimento")
 
 # Add these DataFrames before tab1
 best_pizzeria = pd.DataFrame({

@@ -95,7 +95,7 @@ st.set_page_config(layout="wide")
 
 #PAGE CONTENT
 nomePizzeria = "La Mia Pizzeria"
-st.title(nomePizzeria)
+st.subheader(nomePizzeria)
 
 pages = {
     "Dashboard  🍕": [
