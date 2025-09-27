@@ -88,24 +88,23 @@ def small_screen_blocker():
             <p>Schermo troppo piccolo, per experience migliore prova a ruotare lo schermo o connetterti da computer</p>
         </div>
     """, unsafe_allow_html=True)
-small_screen_blocker()
+#small_screen_blocker()
 
 ##narrow screen blocker
 st.set_page_config(layout="wide")
 
 #PAGE CONTENT
 nomePizzeria = "La Mia Pizzeria"
-st.subheader(nomePizzeria)
 
 pages = {
     "Dashboard  🍕": [
         st.Page("pages/dashboard/kpis_general.py", title="Panoramica"),
         st.Page("pages/dashboard/kpis_advanced.py", title="Approfondimento"),
     ],
-    "Account  👤": [
+    f"{nomePizzeria}  👤": [
         st.Page("pages/account/manage_account.py", title="Gestisci il tuo account"),
     ],
-    "Contatti  📪": [
+    "Altro  📪": [
         st.Page("pages/contacts/who_we_are.py", title="Chi siamo"),
         st.Page("pages/contacts/send_us_a_message.py", title="Contattaci"),
     ],
