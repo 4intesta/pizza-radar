@@ -90,7 +90,17 @@ def small_screen_blocker():
     """, unsafe_allow_html=True)
 #small_screen_blocker()
 
-##narrow screen blocker
+##hide streamlit menu
+hide_streamlit_style = """
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+</style>
+
+"""
+#st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+#set page layout to wide
 st.set_page_config(layout="wide")
 
 #PAGE CONTENT

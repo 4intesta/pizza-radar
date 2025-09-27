@@ -186,7 +186,45 @@ with col3:
 st.divider()
 st.subheader("Punti di Forza e Debolezza")
 st.write("Qui puoi vedere i punti di forza e le aree di miglioramento del tuo locale, basati sulle recensioni dei clienti:")
+col1, col2 = st.columns(2, vertical_alignment="top")
 
+with col1:
+    with st.container(border=True):
+        st.metric("**Punti di Forza 💪**", "", "", help="I punti di forza del tuo locale evidenziati dalle recensioni recenti.")
+        with st.popover("Atmosfera accogliente", use_container_width=True):
+            st.caption("Recensioni che menzionano l'attributo:")
+            st.write("Su Google, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Tripadvisor, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Deliveroo, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+        with st.popover("Ingredienti freschi e di qualità", use_container_width=True):
+            st.caption("Recensioni che menzionano l'attributo:")
+            st.write("Su Google, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Tripadvisor, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Deliveroo, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+        with st.popover("Atmosfera accogliente", use_container_width=True):
+            st.caption("Recensioni che menzionano l'attributo:")
+            st.write("Su Google, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Tripadvisor, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Deliveroo, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+
+with col2:
+    with st.container(border=True):
+        st.metric("**Punti di Debolezza ⚠️**", "", "", help="Le aree di miglioramento del tuo locale evidenziate dalle recensioni recenti.")
+        with st.popover("Tempi di attesa per le consegne", use_container_width=True):
+            st.caption("Recensioni che menzionano l'attributo:")
+            st.write("Su Google, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Tripadvisor, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Deliveroo, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+        with st.popover("Rumore eccessivo nel locale", use_container_width=True):
+            st.caption("Recensioni che menzionano l'attributo:")
+            st.write("Su Google, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Tripadvisor, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Deliveroo, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+        with st.popover("Prezzi leggermente superiori alla media", use_container_width=True):
+            st.caption("Recensioni che menzionano l'attributo:")
+            st.write("Su Google, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Tripadvisor, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
+            st.write("Su Deliveroo, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
 
 st.divider()
 st.subheader("Chatta con PizzaRadar")
