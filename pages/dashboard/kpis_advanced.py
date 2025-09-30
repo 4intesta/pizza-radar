@@ -9,6 +9,12 @@ from numpy.random import default_rng as rng
 from random import uniform
 import pydeck as pdk
 
+# -------------------------
+# Preserve Session States
+# -------------------------
+for k, v in st.session_state.items():
+    st.session_state[k] = v
+    
 st.title("Approfondimento")
 
 # Add these DataFrames before tab1

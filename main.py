@@ -9,7 +9,11 @@ from numpy.random import default_rng as rng
 from random import uniform
 import pydeck as pdk
 
-#CONFIG
+# -------------------------
+# Preserve Session States
+# -------------------------
+for k, v in st.session_state.items():
+    st.session_state[k] = v
 
 ##narrow screen blocker
 def small_screen_blocker():
@@ -105,6 +109,9 @@ st.set_page_config(layout="wide")
 
 #PAGE CONTENT
 nomePizzeria = "La Mia Pizzeria"
+
+st.title(f"Benvenuto, {nomePizzeria} 🍕")
+st.write(st.session_state)
 
 pages = {
     "Dashboard  🍕": [
