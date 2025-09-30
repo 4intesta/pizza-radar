@@ -1,13 +1,6 @@
 import streamlit as st
-import os, base64, pathlib
-from streamlit_echarts import st_echarts
-import pandas as pd
-import altair as alt
-import plotly.express as px
-import numpy as np
+import os, base64
 from numpy.random import default_rng as rng
-from random import uniform
-import pydeck as pdk
 
 # -------------------------
 # Preserve Session States
@@ -107,11 +100,13 @@ footer {visibility: hidden;}
 #set page layout to wide
 st.set_page_config(layout="wide")
 
+# -------------------------
+# Debugging
+# -------------------------
+#st.write(st.session_state)
+
 #PAGE CONTENT
 nomePizzeria = "La Mia Pizzeria"
-
-st.title(f"Benvenuto, {nomePizzeria} 🍕")
-st.write(st.session_state)
 
 pages = {
     "Dashboard  🍕": [
