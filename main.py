@@ -105,22 +105,45 @@ st.set_page_config(layout="wide")
 # -------------------------
 #st.write(st.session_state)
 
-#PAGE CONTENT
-nomePizzeria = "La Mia Pizzeria"
+# -------------------------
+# MAIN PAGE CONTENT
+# -------------------------
+def main_content():
+    nomePizzeria = "La Mia Pizzeria"
 
-pages = {
-    "Dashboard  🍕": [
-        st.Page("pages/dashboard/kpis_general.py", title="Panoramica"),
-        st.Page("pages/dashboard/kpis_advanced.py", title="Approfondimento"),
-    ],
-    f"{nomePizzeria}  👤": [
-        st.Page("pages/account/manage_account.py", title="Gestisci il tuo account"),
-    ],
-    "Altro  📪": [
-        st.Page("pages/contacts/who_we_are.py", title="Chi siamo"),
-        st.Page("pages/contacts/send_us_a_message.py", title="Contattaci"),
-    ],
-}
+    pages = {
+        "Dashboard  🍕": [
+            st.Page("pages/dashboard/kpis_general.py", title="Panoramica"),
+            st.Page("pages/dashboard/kpis_advanced.py", title="Approfondimento"),
+        ],
+        "Account 👤": [
+            st.Page("pages/account/manage_account.py", title="Gestisci il tuo account"),
+        ],
+        "Altro  📪": [
+            st.Page("pages/contacts/who_we_are.py", title="Chi siamo"),
+            st.Page("pages/contacts/send_us_a_message.py", title="Contattaci"),
+        ],
+    }
 
-pg = st.navigation(pages, position="top")
-pg.run()
+    pg = st.navigation(pages, position="top")
+    pg.run()
+
+# -------------------------
+# Login
+# -------------------------
+# Ensure the session state variable exists
+if "user_logged" not in st.session_state:
+    st.session_state["user_logged"] = False
+
+# Case: user not logged in
+if not st.session_state["user_logged"]:
+    st.warning("⚠️ User not logged in.")
+    st.write("Please log in to access the content.")
+
+    if st.button("Log in"):
+        st.session_state["user_logged"] = True
+        st.rerun()
+
+# Case: user logged in
+else:
+    main_content()

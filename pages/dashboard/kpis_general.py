@@ -82,14 +82,15 @@ def feedback_section(feedback_dict: dict, max_freq: int, color: str = "#27AE60")
     data = data.sort_values(by="Frequenza", ascending=False).reset_index(drop=True)
 
     # Layout a due colonne
-    col1, col2 = st.columns([2, 1.5])
+    col1, col2 = st.columns([2, 1.7])
 
     with col1:
         st.write("")
         st.write("")
         st.write("")
         chart = (
-            alt.Chart(data)
+            #plotta solo i 3 valori più frequenti
+            alt.Chart(data.head(3))
             .mark_bar(color=color)
             .encode(
                 x=alt.X(
