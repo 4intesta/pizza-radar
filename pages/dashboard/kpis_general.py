@@ -145,13 +145,13 @@ col1, col2, col3 = st.columns([1, 1, 1], vertical_alignment="bottom")
 # MAIN KPIS
 # -------------------------
 with col1:
-    kpi_plotter("**Allineamento Percezioni 🎯**", "Quanto la tua visione coincide con quella dei clienti.", 0.9,
+    kpi_plotter("**Definire l’identità 🎯**", "Quanto la tua visione coincide con quella dei clienti.", 0.9,
         cards=[
             ActionCard(id="id_1", title="Valorizza il locale", description="Gli utenti apprezzano l'atmosfera del tuo locale, condividi foto e storie che mettano in risalto questo aspetto.", kpi_key="allineamento_percezioni_kpi", increment=5)
     ])
 
 with col2:
-    kpi_plotter("**Presenza Social 🌐**", "Quanto sei attivo e coinvolgente online.", 0.8,
+    kpi_plotter("**Farsi Conoscere 🌐**", "Quanto sei attivo e coinvolgente online.", 0.8,
         cards=[
             ActionCard(id="id_3", title="Rispondi a recensione", description="Su Google, rispondi alla [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html).", kpi_key="presenza_social_kpi", increment=5),
             ActionCard(id="id_4", title="Pubblica contenuto", description="Condividi un post o una storia sui social per mantenere alto l’engagement.", kpi_key="presenza_social_kpi", increment=5)
@@ -159,7 +159,7 @@ with col2:
     )
 
 with col3:
-    kpi_plotter("**Performance Pizzeria 📊**", "Quanto la tua pizzeria si distingue per qualità e servizio.", 0.85,
+    kpi_plotter("**Trattenere i clienti 📊**", "Quanto la tua pizzeria si distingue per qualità e servizio.", 0.85,
         cards=[
             ActionCard(id="id_5", title="Servizio", description="Gli utenti segnalano ritardi nella consegna delle pizze, rivedi la logistica per migliorare i tempi.", kpi_key="performance_pizzeria_kpi", increment=5),
             ActionCard(id="id_6", title="Atmosfera", description="Gli utenti si lamentano del rumore eccessivo nel locale, considera di migliorare l'isolamento acustico.", kpi_key="performance_pizzeria_kpi", increment=5),
