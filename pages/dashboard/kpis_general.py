@@ -8,7 +8,12 @@ from dataclasses import dataclass
 # Preserve Session States
 # -------------------------
 for k, v in st.session_state.items():
-    st.session_state[k] = v
+    if k.startswith("card_checkbox"):
+        try:
+            st.session_state[k] = v
+        except st.errors.StreamlitValueAssignmentNotAllowedError:
+            pass  # skip any keys Streamlit doesn't allow reassignment for
+ 
 
 # -------------------------
 # Card component

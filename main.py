@@ -1,13 +1,18 @@
 import streamlit as st
 import os, base64
 from numpy.random import default_rng as rng
+import streamlit_authenticator as stauth
 
 # -------------------------
 # Preserve Session States
 # -------------------------
 for k, v in st.session_state.items():
-    st.session_state[k] = v
-
+    if k.startswith("card_checkbox"):
+        try:
+            st.session_state[k] = v
+        except st.errors.StreamlitValueAssignmentNotAllowedError:
+            pass
+        
 ##narrow screen blocker
 def small_screen_blocker():
     def get_img_as_base64(file_name):
@@ -131,19 +136,39 @@ def main_content():
 # -------------------------
 # Login
 # -------------------------
-# Ensure the session state variable exists
-if "user_logged" not in st.session_state:
-    st.session_state["user_logged"] = False
+# Define your users
+credentials = {
+    "usernames": {
+        "user1": {
+            "name": "User One",
+            "password": "password1"
+        },
+        "user2": {
+            "name": "User Two",
+            "password": "password2"
+        }
+    }
+}
 
-# Case: user not logged in
-if not st.session_state["user_logged"]:
-    st.warning("⚠️ User not logged in.")
-    st.write("Please log in to access the content.")
+authenticator = stauth.Authenticate(
+    credentials,
+    'your_app_name',
+    'your_cookie_name',
+    cookie_expiry_days=30
+)
+# Store the authenticator object in the session state
+st.session_state["authenticator"] = authenticator
+# Store the credentials in the session state so it can be updated later
+st.session_state["credentials"] = credentials
 
-    if st.button("Log in"):
-        st.session_state["user_logged"] = True
-        st.rerun()
-
-# Case: user logged in
-else:
+if st.session_state["authentication_status"]:
     main_content()
+else:
+    #TODO: Dario qui puoi cambiare la grafica
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.write("Scrivi ciò che vuoi")
+    with col2:
+        authenticator.login(key='Login', location='main')
+        if st.session_state["authentication_status"] is False:
+            st.error("Username/password is incorrect")
