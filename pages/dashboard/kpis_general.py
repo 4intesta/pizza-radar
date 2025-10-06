@@ -227,5 +227,93 @@ with col2:
             st.write("Su Deliveroo, [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html)")
 
 st.divider()
+st.divider()
 st.subheader("Chatta con PizzaRadar")
 st.write("Qui puoi chattare con PizzaRadar per ricevere consigli personalizzati e risposte alle tue domande")
+
+# --- CHAT PIZZA RADAR (blocco finale, nessun selettore modello/temperature) ---
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# API key: .env in locale, st.secrets in produzione
+load_dotenv(override=True)
+_api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
+if not _api_key:
+    st.error("OPENAI_API_KEY non configurata. Aggiungi .env o .streamlit/secrets.toml")
+    st.stop()
+
+_client = OpenAI(api_key=_api_key)
+
+# (facoltativi) file locali per contesto
+_summary_path = "me/summary.txt"
+_reviews_path = "me/da-marcello-carpi-reviews.txt"
+_summary_txt = open(_summary_path, "r", encoding="utf-8").read() if os.path.exists(_summary_path) else "N/D"
+_reviews_txt = open(_reviews_path, "r", encoding="utf-8").read() if os.path.exists(_reviews_path) else "N/D"
+
+# System prompt conciso
+_sys_prompt = f"""
+You are acting as 'Pizzeria da Marcello' operations consultant.
+Give decision-oriented advice for the next 7–30 days with concrete numbers and priorities.
+If data is missing, state assumptions and what to collect next.
+
+## Company Summary
+{_summary_txt}
+
+## Company Reviews
+{_reviews_txt}
+"""
+
+# Stato chat isolato
+if "pizzaradar_messages" not in st.session_state:
+    st.session_state.pizzaradar_messages = [{"role": "system", "content": _sys_prompt}]
+
+# CSS: evita overflow e mantiene la chat pulita
+st.markdown(
+    """
+    <style>
+      .stChatMessage { max-width: 100% !important; }
+      .stChatMessage p { margin-bottom: 0.4rem; }
+      .chatbox { padding: 0.5rem 0.75rem; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Mostra cronologia (escludi il system)
+with st.container(border=True):
+    for _m in st.session_state.pizzaradar_messages[1:]:
+        with st.chat_message(_m["role"]):
+            st.markdown(_m["content"])
+
+# Input utente
+_user_msg = st.chat_input("Scrivi qui la tua domanda per PizzaRadar…")
+
+if _user_msg:
+    # 1) mostra e salva il messaggio utente
+    with st.chat_message("user"):
+        st.markdown(_user_msg)
+    st.session_state.pizzaradar_messages.append({"role": "user", "content": _user_msg})
+
+    # 2) risposta assistant in streaming (UNA volta sola)
+    with st.chat_message("assistant"):
+        try:
+            _stream = _client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=st.session_state.pizzaradar_messages,
+                stream=True,
+            )
+            _answer_text = st.write_stream(_stream)
+        except Exception as e:
+            _answer_text = f"Errore: {e}"
+            st.error(_answer_text)
+
+    # 3) salva risposta assistant
+    st.session_state.pizzaradar_messages.append({"role": "assistant", "content": _answer_text})
+
+    # 4) mantieni lo storico leggero
+    if len(st.session_state.pizzaradar_messages) > 60:
+        st.session_state.pizzaradar_messages = (
+            [st.session_state.pizzaradar_messages[0]] + st.session_state.pizzaradar_messages[-59:]
+        )
+# --- FINE BLOCCO CHAT ---
