@@ -6,7 +6,7 @@ st.title("📩 Contact Us")
 
 st.write(
     """
-We’d love to hear from you!  
+We'd love to hear from you!  
 For questions, collaborations or feedback, reach out directly.
 """
 )

@@ -9,6 +9,16 @@ from numpy.random import default_rng as rng
 from random import uniform
 import pydeck as pdk
 
+# -------------------------
+# Preserve Session States
+# -------------------------
+for k, v in st.session_state.items():
+    if k.startswith("card_checkbox"):
+        try:
+            st.session_state[k] = v
+        except st.errors.StreamlitValueAssignmentNotAllowedError:
+            pass
+    
 st.title("Approfondimento")
 
 # Add these DataFrames before tab1

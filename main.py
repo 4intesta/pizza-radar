@@ -1,16 +1,18 @@
 import streamlit as st
-import os, base64, pathlib
-from streamlit_echarts import st_echarts
-import pandas as pd
-import altair as alt
-import plotly.express as px
-import numpy as np
+import os, base64
 from numpy.random import default_rng as rng
-from random import uniform
-import pydeck as pdk
+import streamlit_authenticator as stauth
 
-#CONFIG
-
+# -------------------------
+# Preserve Session States
+# -------------------------
+for k, v in st.session_state.items():
+    if k.startswith("card_checkbox"):
+        try:
+            st.session_state[k] = v
+        except st.errors.StreamlitValueAssignmentNotAllowedError:
+            pass
+        
 ##narrow screen blocker
 def small_screen_blocker():
     def get_img_as_base64(file_name):
@@ -103,22 +105,70 @@ footer {visibility: hidden;}
 #set page layout to wide
 st.set_page_config(layout="wide")
 
-#PAGE CONTENT
-nomePizzeria = "La Mia Pizzeria"
+# -------------------------
+# Debugging
+# -------------------------
+#st.write(st.session_state)
 
-pages = {
-    "Dashboard  🍕": [
-        st.Page("pages/dashboard/kpis_general.py", title="Panoramica"),
-        st.Page("pages/dashboard/kpis_advanced.py", title="Approfondimento"),
-    ],
-    f"{nomePizzeria}  👤": [
-        st.Page("pages/account/manage_account.py", title="Gestisci il tuo account"),
-    ],
-    "Altro  📪": [
-        st.Page("pages/contacts/who_we_are.py", title="Chi siamo"),
-        st.Page("pages/contacts/send_us_a_message.py", title="Contattaci"),
-    ],
+# -------------------------
+# MAIN PAGE CONTENT
+# -------------------------
+def main_content():
+    nomePizzeria = "La Mia Pizzeria"
+
+    pages = {
+        "Dashboard  🍕": [
+            st.Page("pages/dashboard/kpis_general.py", title="Panoramica"),
+            st.Page("pages/dashboard/kpis_advanced.py", title="Approfondimento"),
+        ],
+        "Account 👤": [
+            st.Page("pages/account/manage_account.py", title="Gestisci il tuo account"),
+        ],
+        "Altro  📪": [
+            st.Page("pages/contacts/who_we_are.py", title="Chi siamo"),
+            st.Page("pages/contacts/send_us_a_message.py", title="Contattaci"),
+        ],
+    }
+
+    pg = st.navigation(pages, position="top")
+    pg.run()
+
+# -------------------------
+# Login
+# -------------------------
+# Define your users
+credentials = {
+    "usernames": {
+        "user1": {
+            "name": "User One",
+            "password": "password1"
+        },
+        "user2": {
+            "name": "User Two",
+            "password": "password2"
+        }
+    }
 }
 
-pg = st.navigation(pages, position="top")
-pg.run()
+authenticator = stauth.Authenticate(
+    credentials,
+    'your_app_name',
+    'your_cookie_name',
+    cookie_expiry_days=30
+)
+# Store the authenticator object in the session state
+st.session_state["authenticator"] = authenticator
+# Store the credentials in the session state so it can be updated later
+st.session_state["credentials"] = credentials
+
+if st.session_state["authentication_status"]:
+    main_content()
+else:
+    #TODO: Dario qui puoi cambiare la grafica
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.write("Scrivi ciò che vuoi")
+    with col2:
+        authenticator.login(key='Login', location='main')
+        if st.session_state["authentication_status"] is False:
+            st.error("Username/password is incorrect")
