@@ -158,10 +158,9 @@ authenticator = stauth.Authenticate(
 )
 # Store the authenticator object in the session state
 st.session_state["authenticator"] = authenticator
-# Store the credentials in the session state so it can be updated later
-st.session_state["credentials"] = credentials
 
-if st.session_state["authentication_status"]:
+#controlla se authentication_status è True o se ci sono cookie di login
+if st.session_state["authentication_status"] or authenticator.cookie_controller.get_cookie() is not None:
     main_content()
 else:
     #TODO: Dario qui puoi cambiare la grafica
