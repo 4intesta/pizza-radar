@@ -44,7 +44,7 @@ def small_screen_blocker():
             return ""
 
     # Load image
-    img_base64 = get_img_as_base64("warning.png")
+    img_base64 = get_img_as_base64("Login1.jpeg")
 
     # CSS per il responsive design
     st.markdown(f"""
@@ -164,10 +164,18 @@ if st.session_state["authentication_status"] or authenticator.cookie_controller.
     st.session_state["authentication_status"] = True
     main_content()
 else:
-    #TODO: Dario qui puoi cambiare la grafica
     col1, col2 = st.columns([1, 1])
     with col1:
-        st.write("Scrivi ciò che vuoi")
+        # Get the base64 encoded image
+        img_base64 = get_img_as_base64("Login1.jpeg")
+        # Display the image using HTML to maintain aspect ratio and styling
+        st.markdown(f"""
+            <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                <img src="data:image/jpeg;base64,{img_base64}" 
+                     style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"
+                     alt="Login Image">
+            </div>
+        """, unsafe_allow_html=True)
     with col2:
         authenticator.login(key='Login', location='main')
         if st.session_state["authentication_status"] is False:
