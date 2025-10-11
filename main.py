@@ -201,9 +201,9 @@ else:
     with col1:
         login_img = get_img_as_base64("Login1.jpeg")
         st.markdown(f"""
-            <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+            <div style="display: flex; justify-content: center; align-items: center; height: 100%; padding: 0 10%;">
                 <img src="data:image/jpeg;base64,{login_img}" 
-                     style="max-width: 100%; height: auto; border-radius: 8px;"
+                     style="width: 110%; height: auto; border-radius: 8px;"
                      alt="Login Image">
             </div>
         """, unsafe_allow_html=True)
