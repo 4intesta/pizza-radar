@@ -2,6 +2,9 @@ import streamlit as st
 import altair as alt
 import pandas as pd
 from dataclasses import dataclass
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
 
 
 # -------------------------
@@ -53,7 +56,7 @@ def kpi_plotter(title: str, help: str, initial_value: float, cards: list[ActionC
             st.metric(title, f"{new_value * 100:.0f}%", f"con azioni consigliate: +{total_increment}%", help=help)
         st.progress(new_value)
        
-        st.text("Azioni consigliate")
+        st.text("Azioni consigliate:")
         with st.container(border=False, height=200):
             for card in cards:
                 card_generator(
@@ -143,20 +146,20 @@ def feedback_section(feedback_dict: dict, max_freq: int, color: str = "#27AE60")
 # -------------------------
 st.title("Panoramica")
 st.subheader("Performance Generale")
-st.write("Qui puoi monitorare metriche chiave e consultare possibili azioni per migliorare l’esperienza dei clienti:")
+st.write("Qui puoi monitorare metriche social chiave e consultare possibili azioni per migliorare l’esperienza dei clienti. Mantenendo alti i valori, ")
 col1, col2, col3 = st.columns([1, 1, 1], vertical_alignment="bottom")
 
 # -------------------------
 # MAIN KPIS
 # -------------------------
 with col1:
-    kpi_plotter("**Definire l’identità 🎯**", "Quanto la tua visione coincide con quella dei clienti.", 0.9,
+    kpi_plotter("**Coerenza di Brand 🎯**", "**Misura quanto la tua visione del ristorante coincide con quella percepita dai clienti.**  \n  \nValori alti indicano un brand chiaro e riconoscibile, aumentando fiducia, reputazione e efficacia della comunicazione.", 0.9,
         cards=[
             ActionCard(id="id_1", title="Valorizza il locale", description="Gli utenti apprezzano l'atmosfera del tuo locale, condividi foto e storie che mettano in risalto questo aspetto.", kpi_key="allineamento_percezioni_kpi", increment=5)
     ])
 
 with col2:
-    kpi_plotter("**Farsi Conoscere 🌐**", "Quanto sei attivo e coinvolgente online.", 0.8,
+    kpi_plotter("**Presenza Digitale 🌐**", "**Valuta la tua visibilità e attività online: social, interazioni e sito web.**  \n  \nValori alti aumentano la notorietà, il traffico digitale e le opportunità di engagement con nuovi clienti.", 0.8,
         cards=[
             ActionCard(id="id_3", title="Rispondi a recensione", description="Su Google, rispondi alla [recensione di Mario Rossi](https://www.tripadvisor.it/ShowUserReviews-g670816-d2474842-r1021101637-Il_Barolino-Carpi_Province_of_Modena_Emilia_Romagna.html).", kpi_key="presenza_social_kpi", increment=5),
             ActionCard(id="id_4", title="Pubblica contenuto", description="Condividi un post o una storia sui social per mantenere alto l’engagement.", kpi_key="presenza_social_kpi", increment=5)
@@ -164,7 +167,7 @@ with col2:
     )
 
 with col3:
-    kpi_plotter("**Trattenere i clienti 📊**", "Quanto la tua pizzeria si distingue per qualità e servizio.", 0.85,
+    kpi_plotter("**Soddisfazione Clienti 📊**", "**Analizza recensioni e feedback per misurare la qualità del servizio e l’esperienza dei clienti.**  \n  \nValori alti indicano clienti soddisfatti e propensi a tornare, migliorando fidelizzazione e reputazione.", 0.85,
         cards=[
             ActionCard(id="id_5", title="Servizio", description="Gli utenti segnalano ritardi nella consegna delle pizze, rivedi la logistica per migliorare i tempi.", kpi_key="performance_pizzeria_kpi", increment=5),
             ActionCard(id="id_6", title="Atmosfera", description="Gli utenti si lamentano del rumore eccessivo nel locale, considera di migliorare l'isolamento acustico.", kpi_key="performance_pizzeria_kpi", increment=5),
@@ -234,16 +237,11 @@ with tab_weakness:
     feedback_section(weaknesses, max_freq=max_freq, color="#E74C3C")
 
 st.divider()
-st.divider()
+
 st.subheader("Chatta con PizzaRadar")
 st.write("Qui puoi chattare con PizzaRadar per ricevere consigli personalizzati e risposte alle tue domande")
 
-# --- CHAT PIZZA RADAR (blocco finale, nessun selettore modello/temperature) ---
-import os
-from dotenv import load_dotenv
-from openai import OpenAI
-
-# API key: .env in locale, st.secrets in produzione
+# --- Load API key ---
 load_dotenv(override=True)
 _api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
 if not _api_key:
@@ -252,13 +250,13 @@ if not _api_key:
 
 _client = OpenAI(api_key=_api_key)
 
-# (facoltativi) file locali per contesto
+# --- Optional local files for context ---
 _summary_path = "me/summary.txt"
 _reviews_path = "me/da-marcello-carpi-reviews.txt"
 _summary_txt = open(_summary_path, "r", encoding="utf-8").read() if os.path.exists(_summary_path) else "N/D"
 _reviews_txt = open(_reviews_path, "r", encoding="utf-8").read() if os.path.exists(_reviews_path) else "N/D"
 
-# System prompt conciso
+# --- System prompt ---
 _sys_prompt = f"""
 You are acting as 'Pizzeria da Marcello' operations consultant.
 Give decision-oriented advice for the next 7–30 days with concrete numbers and priorities.
@@ -271,56 +269,45 @@ If data is missing, state assumptions and what to collect next.
 {_reviews_txt}
 """
 
-# Stato chat isolato
+# --- Initialize chat state ---
 if "pizzaradar_messages" not in st.session_state:
     st.session_state.pizzaradar_messages = [{"role": "system", "content": _sys_prompt}]
 
-# CSS: evita overflow e mantiene la chat pulita
-st.markdown(
-    """
-    <style>
-      .stChatMessage { max-width: 100% !important; }
-      .stChatMessage p { margin-bottom: 0.4rem; }
-      .chatbox { padding: 0.5rem 0.75rem; }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Mostra cronologia (escludi il system)
+# --- Chat container ---
 with st.container(border=True):
-    for _m in st.session_state.pizzaradar_messages[1:]:
-        with st.chat_message(_m["role"]):
-            st.markdown(_m["content"])
+    messages = st.container(height=300, border=False)
 
-# Input utente
-_user_msg = st.chat_input("Scrivi qui la tua domanda per PizzaRadar…")
+    # --- Replay chat history ---
+    for msg in st.session_state.pizzaradar_messages[1:]:  # skip system prompt
+        if msg["role"] == "user":
+            messages.chat_message("user").write(msg["content"])
+        elif msg["role"] == "assistant":
+            messages.chat_message("assistant").write(msg["content"])
 
-if _user_msg:
-    # 1) mostra e salva il messaggio utente
-    with st.chat_message("user"):
-        st.markdown(_user_msg)
-    st.session_state.pizzaradar_messages.append({"role": "user", "content": _user_msg})
+    # --- Input ---
+    if prompt := st.chat_input("Scrivi qui la tua domanda per PizzaRadar…"):
+        # Show new user message
+        messages.chat_message("user").write(prompt)
+        st.session_state.pizzaradar_messages.append({"role": "user", "content": prompt})
 
-    # 2) risposta assistant in streaming (UNA volta sola)
-    with st.chat_message("assistant"):
-        try:
-            _stream = _client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=st.session_state.pizzaradar_messages,
-                stream=True,
+        # Generate assistant response
+        with messages.chat_message("assistant"):
+            try:
+                _stream = _client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=st.session_state.pizzaradar_messages,
+                    stream=True,
+                )
+                _answer_text = st.write_stream(_stream)
+            except Exception as e:
+                _answer_text = f"Errore: {e}"
+                st.error(_answer_text)
+
+        # Save assistant response
+        st.session_state.pizzaradar_messages.append({"role": "assistant", "content": _answer_text})
+
+        # Keep chat history light
+        if len(st.session_state.pizzaradar_messages) > 60:
+            st.session_state.pizzaradar_messages = (
+                [st.session_state.pizzaradar_messages[0]] + st.session_state.pizzaradar_messages[-59:]
             )
-            _answer_text = st.write_stream(_stream)
-        except Exception as e:
-            _answer_text = f"Errore: {e}"
-            st.error(_answer_text)
-
-    # 3) salva risposta assistant
-    st.session_state.pizzaradar_messages.append({"role": "assistant", "content": _answer_text})
-
-    # 4) mantieni lo storico leggero
-    if len(st.session_state.pizzaradar_messages) > 60:
-        st.session_state.pizzaradar_messages = (
-            [st.session_state.pizzaradar_messages[0]] + st.session_state.pizzaradar_messages[-59:]
-        )
-# --- FINE BLOCCO CHAT ---
