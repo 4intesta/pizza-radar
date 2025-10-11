@@ -146,7 +146,7 @@ def feedback_section(feedback_dict: dict, max_freq: int, color: str = "#27AE60")
 # -------------------------
 st.title("Panoramica")
 st.subheader("Performance Generale")
-st.write("Qui puoi monitorare metriche social chiave e consultare possibili azioni per migliorare l’esperienza dei clienti. Mantenendo alti i valori, ")
+st.write("Monitora le KPI social principali: mantenerle elevate aiuta a rafforzare il brand, aumentare la visibilità e fidelizzare i clienti.")
 col1, col2, col3 = st.columns([1, 1, 1], vertical_alignment="bottom")
 
 # -------------------------
@@ -182,7 +182,7 @@ st.divider()
 # -------------------------
 st.subheader("Punti di Forza e Debolezza")
 st.write("Qui puoi vedere le aree di forza e di miglioramento del tuo locale, basati sulle recensioni recenti dei clienti:")
-tab_strength, tab_weakness = st.tabs(["Punti di Forza 💪", "Punti di Debolezza ⚠️"])
+tab_strength, tab_weakness = st.tabs(["💪 Punti di Forza", "⚠️ Punti di Debolezza"])
 
 # Dati strengths
 strengths = {
