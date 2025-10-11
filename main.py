@@ -4,6 +4,37 @@ from numpy.random import default_rng as rng
 import streamlit_authenticator as stauth
 
 # -------------------------
+# Utility Functions
+# -------------------------
+def get_img_as_base64(file_name):
+    try:
+        # Prima prova il percorso relativo per Streamlit Cloud
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        file_paths = [
+            os.path.join(current_dir, "assets", file_name),  # Percorso standard
+            os.path.join(".", "assets", file_name),          # Percorso relativo
+            os.path.join("assets", file_name),               # Percorso diretto
+            os.path.join("pizza-radar","assets", file_name)
+        ]
+        
+        for file_path in file_paths:
+            if os.path.exists(file_path):
+                with open(file_path, "rb") as img_file:
+                    return base64.b64encode(img_file.read()).decode()
+        
+        # Se siamo qui, stampa info di debug
+        st.write("Debug - Percorsi tentati:")
+        for path in file_paths:
+            st.write(f"- {path} (exists: {os.path.exists(path)})")
+        
+        # Se non troviamo il file, usa un'immagine di fallback codificata direttamente
+        return "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAAA1BMVEX///+nxBvIAAAAAXRSTlMAQObYZgAAABxJREFUeNrtwTEBAAAAwqD1T20ND6AAAAAA4NcAEsAAAcw7WmwAAAAASUVORK5CYII="
+        
+    except Exception as e:
+        st.error(f"Error loading image: {e}")
+        return ""
+
+# -------------------------
 # Preserve Session States
 # -------------------------
 for k, v in st.session_state.items():
@@ -15,36 +46,8 @@ for k, v in st.session_state.items():
         
 ##narrow screen blocker
 def small_screen_blocker():
-    def get_img_as_base64(file_name):
-        try:
-            # Prima prova il percorso relativo per Streamlit Cloud
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            file_paths = [
-                os.path.join(current_dir, "assets", file_name),  # Percorso standard
-                os.path.join(".", "assets", file_name),          # Percorso relativo
-                os.path.join("assets", file_name),               # Percorso diretto
-                os.path.join("pizza-radar","assets", file_name)
-            ]
-            
-            for file_path in file_paths:
-                if os.path.exists(file_path):
-                    with open(file_path, "rb") as img_file:
-                        return base64.b64encode(img_file.read()).decode()
-            
-            # Se siamo qui, stampa info di debug
-            st.write("Debug - Percorsi tentati:")
-            for path in file_paths:
-                st.write(f"- {path} (exists: {os.path.exists(path)})")
-            
-            # Se non troviamo il file, usa un'immagine di fallback codificata direttamente
-            return "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAAA1BMVEX///+nxBvIAAAAAXRSTlMAQObYZgAAABxJREFUeNrtwTEBAAAAwqD1T20ND6AAAAAA4NcAEsAAAcw7WmwAAAAASUVORK5CYII="
-            
-        except Exception as e:
-            st.error(f"Error loading image: {e}")
-            return ""
-
     # Load image
-    img_base64 = get_img_as_base64("Login1.jpeg")
+    img_base64 = get_img_as_base64("warning.jpeg")
 
     # CSS per il responsive design
     st.markdown(f"""
@@ -165,14 +168,42 @@ if st.session_state["authentication_status"] or authenticator.cookie_controller.
     main_content()
 else:
     col1, col2 = st.columns([1, 1])
+    
+    # Add custom CSS for columns and form
+    st.markdown("""
+        <style>
+            [data-testid="stForm"] {
+                border: none;
+                padding: 0;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            /* Make columns equal height */
+            [data-testid="column"] {
+                height: calc(100vh - 100px);
+                display: flex;
+                align-items: center;
+            }
+            /* Remove default form padding */
+            .stButton {
+                margin-top: 1rem;
+            }
+            /* Center form elements */
+            [data-testid="stVerticalBlock"] {
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+    
     with col1:
-        # Get the base64 encoded image
-        img_base64 = get_img_as_base64("Login1.jpeg")
-        # Display the image using HTML to maintain aspect ratio and styling
+        login_img = get_img_as_base64("Login1.jpeg")
         st.markdown(f"""
             <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
-                <img src="data:image/jpeg;base64,{img_base64}" 
-                     style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"
+                <img src="data:image/jpeg;base64,{login_img}" 
+                     style="max-width: 100%; height: auto; border-radius: 8px;"
                      alt="Login Image">
             </div>
         """, unsafe_allow_html=True)
