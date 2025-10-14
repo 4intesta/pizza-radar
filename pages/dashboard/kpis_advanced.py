@@ -1,9 +1,6 @@
 import streamlit as st
-import os, base64, pathlib
-from streamlit_echarts import st_echarts
 import pandas as pd
 import altair as alt
-import plotly.express as px
 import numpy as np
 from numpy.random import default_rng as rng
 from random import uniform
@@ -216,132 +213,128 @@ with tab2:
     st.subheader("Panoramica Concorrenza")
     st.write("Nella tua zona ci sono diverse pizzerie. Ecco una panoramica delle loro performance e di come si posiziona la tua:")
 
-    tab_table, tab_map = st.tabs(["Tabella", "Mappa"])
+    with st.container(border=False):
+        
+        # Generate competitor data
+        competitors_df = generate_competitor_data()
 
-    with tab_table:
-        # Configure the dataframe display
-        st.dataframe(
-            prices_df[[
-                "pizzeria",
-                "prezzo_margherita",
-                "prezzo_medio",
-                "menu_items",
-                "average_rating_generale_last_30_days",
-                "weekly_reviews"
-            ]],
-            column_config={
-                "pizzeria": st.column_config.TextColumn(
-                    "Pizzeria",
-                    width= 150,
-                    help="Nome della pizzeria"
+        # Add my pizzeria data to competitors_df
+        my_pizzeria_data = pd.DataFrame({
+            'name': ['La Mia Pizzeria'],
+            'lat': [44.784338],  # Slightly offset from center
+            'lon': [10.887311],  # Slightly offset from center
+            'rating': [prices_df.loc[prices_df['is_mine'], 'historic_generale_rating'].iloc[0]],
+            'interactions': [450]  # High number of interactions for visibility
+        })
+
+        # Combine my pizzeria with competitors
+        all_pizzerias = pd.concat([my_pizzeria_data, competitors_df])
+
+        #TODO: fix colors of heatmap
+        st.pydeck_chart(
+            pdk.Deck(
+                map_style=None,
+                initial_view_state=pdk.ViewState(
+                    latitude=44.783338,
+                    longitude=10.886311,
+                    zoom=13,
+                    pitch=0,
                 ),
-                "prezzo_margherita": st.column_config.NumberColumn(
-                    "Margherita",
-                    format="euro",
-                    width=100,
-                    help="Prezzo della pizza margherita"
-                ),
-                "prezzo_medio": st.column_config.NumberColumn(
-                    "Pizza Media",
-                    format= "euro",
-                    width=100,
-                    help="Prezzo medio delle pizze"
-                ),
-                "menu_items": st.column_config.NumberColumn(
-                    "Numero Pizze",
-                    width=100,
-                    help="Numero di pizze nel menu"
-                ),
-                "average_rating_generale_last_30_days": st.column_config.ProgressColumn(
-                    "Generale ⭐️",
-                    format="%.1f",
-                    width= 100,
-                    min_value=0,
-                    max_value=5,
-                    help="Valutazione generale ultimi 30 giorni"
-                ),
-                "weekly_reviews": st.column_config.AreaChartColumn(
-                    "Recensioni Settimanali",
-                    y_min=0,
-                    help="Numero recensioni per settimana (ultime 4 settimane)"
-                )
-            },
-            hide_index=True,
+                layers=[
+                    # Layer for competitor pizzerias
+                    pdk.Layer(
+                        "ScatterplotLayer",
+                        data=competitors_df,
+                        get_position="[lon, lat]",
+                        get_color=[
+                            "255 * (1 - (rating - 3.5) / 1.5)",
+                            "255 * ((rating - 3.5) / 1.5)",
+                            "0",
+                            "160"
+                        ],
+                        # Scale radius based on interactions
+                        get_radius="interactions / 2",  # Divide by 2 to get reasonable dot sizes
+                        radius_min_pixels=5,           # Minimum size
+                        radius_max_pixels=30,          # Maximum size
+                        pickable=True,
+                        auto_highlight=True,
+                    ),
+                    # Additional layer for my pizzeria with border
+                    pdk.Layer(
+                        "ScatterplotLayer",
+                        data=my_pizzeria_data,
+                        get_position="[lon, lat]",
+                        get_color=[
+                            "255 * (1 - (rating - 3.5) / 1.5)",
+                            "255 * ((rating - 3.5) / 1.5)",
+                            "0",
+                            "160"
+                        ],
+                        get_radius="interactions / 2",
+                        radius_min_pixels=5,
+                        radius_max_pixels=30,
+                        pickable=True,
+                        auto_highlight=True,
+                        stroked=True,  # enable borders
+                        line_width_min_pixels=1.5,  # border width
+                        get_line_color=[0, 0, 0]  # border color (gray here)
+                    ),
+                ],
+                tooltip={"text": "{name}\nRating: {rating}\nInterazioni: {interactions}"},
+            ),
             height=400
         )
 
-    with tab_map:
-        with st.container(border=False):
-           
-            # Generate competitor data
-            competitors_df = generate_competitor_data()
-
-            # Add my pizzeria data to competitors_df
-            my_pizzeria_data = pd.DataFrame({
-                'name': ['La Mia Pizzeria'],
-                'lat': [44.784338],  # Slightly offset from center
-                'lon': [10.887311],  # Slightly offset from center
-                'rating': [prices_df.loc[prices_df['is_mine'], 'historic_generale_rating'].iloc[0]],
-                'interactions': [450]  # High number of interactions for visibility
-            })
-
-            # Combine my pizzeria with competitors
-            all_pizzerias = pd.concat([my_pizzeria_data, competitors_df])
-
-            #TODO: fix colors of heatmap
-            st.pydeck_chart(
-                pdk.Deck(
-                    map_style=None,
-                    initial_view_state=pdk.ViewState(
-                        latitude=44.783338,
-                        longitude=10.886311,
-                        zoom=13,
-                        pitch=0,
-                    ),
-                    layers=[
-                        # Layer for competitor pizzerias
-                        pdk.Layer(
-                            "ScatterplotLayer",
-                            data=competitors_df,
-                            get_position="[lon, lat]",
-                            get_color=[
-                                "255 * (1 - (rating - 3.5) / 1.5)",
-                                "255 * ((rating - 3.5) / 1.5)",
-                                "0",
-                                "160"
-                            ],
-                            # Scale radius based on interactions
-                            get_radius="interactions / 2",  # Divide by 2 to get reasonable dot sizes
-                            radius_min_pixels=5,           # Minimum size
-                            radius_max_pixels=30,          # Maximum size
-                            pickable=True,
-                            auto_highlight=True,
-                        ),
-                        # Additional layer for my pizzeria with border
-                        pdk.Layer(
-                            "ScatterplotLayer",
-                            data=my_pizzeria_data,
-                            get_position="[lon, lat]",
-                            get_color=[
-                                "255 * (1 - (rating - 3.5) / 1.5)",
-                                "255 * ((rating - 3.5) / 1.5)",
-                                "0",
-                                "160"
-                            ],
-                            get_radius="interactions / 2",
-                            radius_min_pixels=5,
-                            radius_max_pixels=30,
-                            pickable=True,
-                            auto_highlight=True,
-                            stroked=True,  # enable borders
-                            line_width_min_pixels=1.5,  # border width
-                            get_line_color=[0, 0, 0]  # border color (gray here)
-                        ),
-                    ],
-                    tooltip={"text": "{name}\nRating: {rating}\nInterazioni: {interactions}"},
-                ),
-                height=400
+    # Configure the dataframe display
+    st.dataframe(
+        prices_df[[
+            "pizzeria",
+            "prezzo_margherita",
+            "prezzo_medio",
+            "menu_items",
+            "average_rating_generale_last_30_days",
+            "weekly_reviews"
+        ]],
+        column_config={
+            "pizzeria": st.column_config.TextColumn(
+                "Pizzeria",
+                width= 150,
+                help="Nome della pizzeria"
+            ),
+            "prezzo_margherita": st.column_config.NumberColumn(
+                "Margherita",
+                format="euro",
+                width=100,
+                help="Prezzo della pizza margherita"
+            ),
+            "prezzo_medio": st.column_config.NumberColumn(
+                "Pizza Media",
+                format= "euro",
+                width=100,
+                help="Prezzo medio delle pizze"
+            ),
+            "menu_items": st.column_config.NumberColumn(
+                "Numero Pizze",
+                width=100,
+                help="Numero di pizze nel menu"
+            ),
+            "average_rating_generale_last_30_days": st.column_config.ProgressColumn(
+                "Generale ⭐️",
+                format="%.1f",
+                width= 100,
+                min_value=0,
+                max_value=5,
+                help="Valutazione generale ultimi 30 giorni"
+            ),
+            "weekly_reviews": st.column_config.AreaChartColumn(
+                "Recensioni Settimanali",
+                y_min=0,
+                help="Numero recensioni per settimana (ultime 4 settimane)"
             )
+        },
+        hide_index=True,
+        height=400
+    )
 
     st.divider()
 
@@ -352,7 +345,7 @@ with tab2:
 
     def render_review_tab(pizzeria_data, tab_type):
         """Helper function to render review tabs (migliore, peggiore, di moda)"""
-        st.text(pizzeria_data['name'].iloc[0])
+        st.subheader(f"*{pizzeria_data['name'].iloc[0]}*")
         col1, col2 = st.columns([1.35, 4.1])
         
         with col1:
@@ -362,33 +355,43 @@ with tab2:
                 f"{pizzeria_data['rating_trend_su_mese'].iloc[0]} su mese", 
                 border=True
             )
+            
+            changes = list(rng(4).standard_normal(20))
             st.metric(
                 "**Recensioni Ricevute**", 
                 pizzeria_data['total_reviews'].iloc[0], 
-                f"{pizzeria_data['total_reviews_trend_su_mese'].iloc[0]}  su mese", 
+                f"{pizzeria_data['total_reviews_trend_su_mese'].iloc[0]}  su mese",
+                chart_data=[sum(changes[:i]) for i in range(20)], 
+                chart_type="line",
                 border=True
             )
         
         with col2:
-            with st.container(height=283, border=True):
-                st.metric("**Alcune recensioni rilevanti**", "", "")
-                with st.container(height=205, border=False):
-                    for comment in pizzeria_data['top_comments'].iloc[0]:
-                        with st.container(border=True):
-                            source = "Google" if comment['rating'] > 3 else "TripAdvisor"  # Example logic
-                            st.caption(f"{comment['author']} • {comment['date']} • {source} • {'⭐' * comment['rating']}")
-                            st.write(comment['text'])
-                        st.text("")
+            st.write("Recensioni recenti:")
+            with st.container(height=322, border=False):
+                for comment in pizzeria_data['top_comments'].iloc[0]:
+                    with st.container(border=False):
+                        source = "Google" if comment['rating'] > 3 else "TripAdvisor"  # Example logic
+                        if(tab_type!="PEGGIOORE"):
+                            st.success(
+                                f":small[***{comment['author']} ({comment['date']})***  \n {source}]  \n"
+                                f":small[*{comment['text']}*]  ↗"
+                            )
+                        else:
+                            st.error(
+                                f":small[***{comment['author']} ({comment['date']})***  \n {source}]  \n"
+                                f":small[*{comment['text']}*]  ↗"
+                            )
 
     # Then replace the existing tab content with:
     with tab_migliore:
-        render_review_tab(best_pizzeria, 'migliore')
+        render_review_tab(best_pizzeria, 'MIGLIORE')
 
     with tab_peggiore:
-        render_review_tab(worst_pizzeria, 'peggiore')
+        render_review_tab(worst_pizzeria, 'PEGGIOORE')
 
     with tab_di_moda:
-        render_review_tab(trending_pizzeria, 'di_moda')
+        render_review_tab(trending_pizzeria, 'DI_MODA')
 
     
     st.divider()
@@ -968,7 +971,7 @@ with tab3:
             color=alt.Color('Pizzeria:N',
                           scale=alt.Scale(
                               domain=['La Mia Pizzeria', 'Competitor'],
-                              range=['#F12929', '#4285F4']
+                              range=['#5383EC', 'grey']
                           )),
             tooltip=[
                 alt.Tooltip('Pizzeria:N', title='Pizzeria'),
@@ -1065,7 +1068,7 @@ with tab3:
                     color=alt.Color('Pizzeria:N',
                                 scale=alt.Scale(
                                     domain=['La Mia Pizzeria', 'Competitor'],
-                                    range=['#F12929', '#4285F4']
+                                    range=['#5383EC', 'grey']
                                 )),
                     tooltip=[
                         alt.Tooltip('Pizzeria:N', title='Pizzeria'),

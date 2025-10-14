@@ -57,7 +57,7 @@ def kpi_plotter(title: str, help: str, initial_value: float, cards: list[ActionC
         st.progress(new_value)
        
         st.text("Azioni consigliate:")
-        with st.container(border=False, height=200):
+        with st.container(border=False, height=280):
             for card in cards:
                 card_generator(
                     card.id,
@@ -93,9 +93,6 @@ def feedback_section(feedback_dict: dict, max_freq: int, color: str = "#27AE60")
     col1, col2 = st.columns([2, 1.7])
 
     with col1:
-        st.write("")
-        st.write("")
-        st.write("")
         chart = (
             #plotta solo i 3 valori più frequenti
             alt.Chart(data.head(3))
@@ -105,7 +102,7 @@ def feedback_section(feedback_dict: dict, max_freq: int, color: str = "#27AE60")
                     "Categoria:N",
                     sort="-y",
                     title="",
-                    axis=alt.Axis(labelAngle=0, grid=False, labelFontSize=14)
+                    axis=alt.Axis(labelAngle=0, grid=False, labelFontSize=14, labelLimit=0)
                 ),
                 y=alt.Y(
                     "Frequenza:Q",
@@ -121,7 +118,7 @@ def feedback_section(feedback_dict: dict, max_freq: int, color: str = "#27AE60")
 
     with col2:
         st.write("Recensioni recenti:")
-        with st.container(border=False, height=305):
+        with st.container(border=False, height=255):
             for _, row in data.iterrows():
                 with st.expander(f"{row['Categoria']} ({row['Frequenza']})"):
                     for comment in row["Commenti"]:
@@ -180,8 +177,15 @@ st.divider()
 # -------------------------
 # STRENGTHS & WEAKNESSES
 # -------------------------
-st.subheader("Punti di Forza e Debolezza")
-st.write("Qui puoi vedere le aree di forza e di miglioramento del tuo locale, basati sulle recensioni recenti dei clienti:")
+st.subheader("Come sei percepito")
+st.write("Qui puoi vedere come sei percepito online, le aree di forza e di miglioramento del tuo locale, basati sulle recensioni recenti dei clienti:")
+percezione = "I clienti percepiscono la tua pizzeria come un luogo accogliente e autentico, dove la qualità degli ingredienti e la cortesia del personale fanno la differenza. Le recensioni evidenziano un’atmosfera familiare e pizze dal gusto genuino, anche se alcuni suggeriscono di migliorare la rapidità del servizio nei momenti di punta. Nel complesso, la reputazione online trasmette calore, tradizione e attenzione al cliente."
+badges = ["🍕 Autentica Tradizione","🔥 Forno a Legna", "🕐 Servizio Puntuale"]
+with st.container(border=True):
+    st.write(f"***{percezione}***")
+    if badges:
+        st.markdown(" ".join([f":blue-badge[{b}]" for b in badges]))
+
 tab_strength, tab_weakness = st.tabs(["💪 Punti di Forza", "⚠️ Punti di Debolezza"])
 
 # Dati strengths
@@ -274,7 +278,7 @@ if "pizzaradar_messages" not in st.session_state:
     st.session_state.pizzaradar_messages = [{"role": "system", "content": _sys_prompt}]
 
 # --- Chat container ---
-with st.container(border=True):
+with st.container(border=False):
     messages = st.container(height=300, border=False)
 
     # --- Replay chat history ---
