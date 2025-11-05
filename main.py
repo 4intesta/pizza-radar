@@ -120,6 +120,9 @@ def main_content():
     nomePizzeria = "La Mia Pizzeria"
 
     pages = {
+        "Compet.io": [
+            st.Page("pages/competio/competio.py", title="Panoramica")
+        ],
         "Dashboard  🍕": [
             st.Page("pages/dashboard/kpis_general.py", title="Panoramica"),
             st.Page("pages/dashboard/kpis_advanced.py", title="Approfondimento"),
@@ -167,47 +170,6 @@ if st.session_state["authentication_status"] or authenticator.cookie_controller.
     st.session_state["authentication_status"] = True
     main_content()
 else:
-    col1, col2 = st.columns([1, 1])
-    
-    # Add custom CSS for columns and form
-    st.markdown("""
-        <style>
-            [data-testid="stForm"] {
-                border: none;
-                padding: 0;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            }
-            /* Make columns equal height */
-            [data-testid="column"] {
-                height: calc(100vh - 100px);
-                display: flex;
-                align-items: center;
-            }
-            /* Remove default form padding */
-            .stButton {
-                margin-top: 1rem;
-            }
-            /* Center form elements */
-            [data-testid="stVerticalBlock"] {
-                padding-top: 2rem;
-                padding-bottom: 2rem;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    with col1:
-        login_img = get_img_as_base64("Login1.jpeg")
-        st.markdown(f"""
-            <div style="display: flex; justify-content: center; align-items: center; height: 100%; padding: 0 15%;">
-                <img src="data:image/jpeg;base64,{login_img}" 
-                     style="width: 100%; height: auto; border-radius: 8px;"
-                     alt="Login Image">
-            </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        authenticator.login(key='Login', location='main')
-        if st.session_state["authentication_status"] is False:
-            st.error("Username/password is incorrect")
+    authenticator.login(key='Login', location='main')
+    if st.session_state["authentication_status"] is False:
+        st.error("Username/password is incorrect")
