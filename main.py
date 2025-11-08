@@ -14,7 +14,9 @@ p7 = st.Page("pages/altro/account.py", title="Il tuo account", icon=":material/a
 # ---------------------------------------
 # Streamlit Page Configurations
 # ---------------------------------------
-st.set_page_config(page_title="PizzaRadar Dashboard", page_icon="random", layout="wide")
+# Shortening stupid Streamlit top padding
+st.write('<style>div.block-container{padding-top:4rem;}</style>', unsafe_allow_html=True)
+
 
 
 if not st.user.is_logged_in:
