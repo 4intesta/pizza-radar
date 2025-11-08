@@ -14,7 +14,7 @@ p7 = st.Page("pages/altro/account.py", title="Il tuo account", icon=":material/a
 # ---------------------------------------
 # Streamlit Page Configurations
 # ---------------------------------------
-# Shortening stupid Streamlit top padding
+st.set_page_config(layout="wide")
 st.write('<style>div.block-container{padding-top:4rem;}</style>', unsafe_allow_html=True)
 
 
