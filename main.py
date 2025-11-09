@@ -3,7 +3,7 @@ import streamlit as st
 # ---------------------------------------
 # Page Definitions
 # ---------------------------------------
-p1 = st.Page("pages/panoramica/competition.py", title="Pizzerie in zona", icon=":material/leaderboard:", url_path="pizzerie-in-zona")
+p1 = st.Page("pages/panoramica/competition.py", title="Panoramica zona", icon=":material/leaderboard:", url_path="pizzerie-in-zona")
 p2 = st.Page("pages/analisi recensioni/coach.py", title="Coach", icon=":material/school:", url_path="coach")
 p3 = st.Page("pages/metrics/your_metrics.py", title="Le tue metriche", icon=":material/search_insights:", url_path="le-tue-metriche")
 p4 = st.Page("pages/metrics/compare.py", title="Confrontati con altre pizzerie", icon=":material/compare_arrows:", url_path="confrontati-con-altre-pizzerie")

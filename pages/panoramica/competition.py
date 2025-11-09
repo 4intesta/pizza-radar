@@ -2,7 +2,9 @@ import streamlit as st
 import pydeck as pdk
 
 from database.mock_data import competition_page_data
-from pages.panoramica.utils.utils import map_generator
+from pages.panoramica.components.utils import map_generator
+from pages.panoramica.components.utils import table_generator
+from pages.panoramica.components.utils import computation_of_historical_rankings
 
 st.write("Competition Page")
 
@@ -28,3 +30,15 @@ st.toggle(
 # Genera e mostra la mappa
 map = map_generator(name_of_my_pizzeria, competition_page_data, st.session_state.toggle_on)
 st.pydeck_chart(map)
+
+# Calcola ranking per tabella e linechart
+competition_page_data = computation_of_historical_rankings(competition_page_data)
+
+# Genera tabella
+competition_page_for_table, columns_to_show, column_config = table_generator(competition_page_data, st.session_state.toggle_on)
+st.dataframe(competition_page_for_table[columns_to_show], column_config=column_config)
+
+# Genera linechart
+#(si usa competition_page_data NON competition_page_for_table) 
+
+#print(competition_page_data.head())
