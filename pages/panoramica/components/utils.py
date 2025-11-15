@@ -335,6 +335,7 @@ def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_p
         placeholder="Seleziona pizzerie da confrontare",
         help="Lista di pizzerie da visualizzare nel grafico a linee",
         options=pizzeria_names,
+        max_selections=10,
         default=name_of_my_pizzeria
     )
     month_names_abbr = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
@@ -396,6 +397,8 @@ def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria
                 grid=False,
                 domain=True,
                 title="Mesi",
+                titleFontSize=18,
+                labelFontSize=16,
                 values=list(range(12)),
                 labelExpr=f'datum.value >= 0 ? {month_names_abbr_shifted} [datum.value] : datum.value'
             )
@@ -408,6 +411,7 @@ def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria
                 labels=False,
                 domain=True,
                 title="Percezione pizzeria",
+                titleFontSize=18,
                 values=[0]
             )
         ),

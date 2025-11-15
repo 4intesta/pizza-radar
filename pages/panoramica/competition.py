@@ -7,6 +7,7 @@ from pages.panoramica.components.utils import computation_of_historical_rankings
 from pages.panoramica.components.utils import linechart_generator
 
 st.title("Percezione nella tua zona")
+st.write("Osserva come la tua pizzeria si colloca rispetto alle realtà attorno a te. La mappa mostra i competitor più vicini, mentre la tabella – ordinata in base alle pizze più apprezzate – ti offre un confronto immediato e intuitivo. Un insight chiaro per capire trend e opportunità.")
 
 # Nome della pizzeria dell'utente
 name_of_my_pizzeria = "Pizzeria 4"
@@ -36,7 +37,6 @@ competition_page_data = computation_of_historical_rankings(competition_page_data
 with tab_table:
     #TODO: Aggiungerei colonna "cosa va bene/male"
     competition_page_for_table, columns_to_show, column_config = table_generator(competition_page_data, st.session_state.toggle_on)
-    st.write(competition_page_for_table)
     st.dataframe(competition_page_for_table[columns_to_show], column_config=column_config)
 
 with tab_line_chart:
