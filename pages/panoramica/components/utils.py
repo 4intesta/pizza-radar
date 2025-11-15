@@ -2,7 +2,8 @@ import pydeck as pdk
 import pandas as pd
 import streamlit as st
 import numpy as np
-
+import altair as alt
+from datetime import datetime
 
 
 def value_to_color(n):
@@ -159,15 +160,6 @@ def add_rank_change_columns(competition_page_data: pd.DataFrame) -> pd.DataFrame
     for pos in range(len(df)):
         row = df.iloc[pos]
 
-        # Weekly change
-        diff_weekly = current_rank[pos] - row["Last Year Weekly Rank"][-1]
-        if diff_weekly < 0:
-            df.at[df.index[pos], "rank_change_weekly"] = f"↑ {abs(diff_weekly)}"
-        elif diff_weekly > 0:
-            df.at[df.index[pos], "rank_change_weekly"] = f"↓ {diff_weekly}"
-        else:
-            df.at[df.index[pos], "rank_change_weekly"] = ""
-
         # Monthly change
         diff_monthly = current_rank[pos] - row["Last Year Monthly Rank"][-1]
         if diff_monthly < 0:
@@ -179,31 +171,7 @@ def add_rank_change_columns(competition_page_data: pd.DataFrame) -> pd.DataFrame
 
     return df
 
-def computation_of_historical_rankings(competition_page_data: pd.DataFrame):
-    # ----------------------------------------------------
-    # Compute weekly custom rating
-    # ----------------------------------------------------
-    num_weeks = 52
-    competition_page_data["Last Year Weekly Custom Rating"] = [
-        [reviews[i] * (ratings[i] - 3) for i in range(num_weeks)]
-        for reviews, ratings in zip(competition_page_data["Last Year Weekly Reviews"], competition_page_data["Last Year Weekly Ratings"])
-    ]
-    
-    # Compute weekly rankings
-    weekly_custom_matrix = np.array(competition_page_data["Last Year Weekly Custom Rating"].to_list())  # shape: (num_pizzerias, 52)
-    weekly_ranks = np.zeros_like(weekly_custom_matrix, dtype=int)
-    
-    # For each week, compute rankings (1 = highest custom rating)
-    for week_idx in range(num_weeks):
-        week_scores = weekly_custom_matrix[:, week_idx]
-        # argsort descending: highest value gets rank 1
-        sorted_indices = np.argsort(-week_scores)
-        ranks = np.empty_like(sorted_indices)
-        ranks[sorted_indices] = np.arange(1, len(week_scores)+1)
-        weekly_ranks[:, week_idx] = ranks
-
-    competition_page_data["Last Year Weekly Rank"] = weekly_ranks.tolist()
-    
+def computation_of_historical_rankings(competition_page_data: pd.DataFrame):    
     # ----------------------------------------------------
     # Compute monthly custom rating
     # ----------------------------------------------------
@@ -279,6 +247,9 @@ def table_generator(competition_page_data: pd.DataFrame, toggle_on: bool = False
         rank_change_colum_name = "rank_change_weekly"
         rank_change_colum_help = "Variazione classifica gradimento rispetto alla settimana scorsa"
 
+
+    #TODO: prova a mettere None al posto di valutazione recensione = 0 
+
     columns_to_show = [
         "Name", 
         "Mean Price", 
@@ -300,11 +271,12 @@ def table_generator(competition_page_data: pd.DataFrame, toggle_on: bool = False
             width="medium",
             help="Nome della pizzeria"
         ),
+        #TODO: risolvi il fatto che la media tenga in considerazione gli zeri
         average_rating_column_name: st.column_config.ProgressColumn(
             "Valutazione ⭐️",
             format="%.1f",
             width="medium",
-            min_value=0,
+            min_value=1,
             max_value=5,
             help=average_rating_column_help
         ),
@@ -343,3 +315,124 @@ def table_generator(competition_page_data: pd.DataFrame, toggle_on: bool = False
         ),
     }
     return competition_page_for_table, columns_to_show, column_config
+
+def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str):
+    competition_page_for_linechart = pd.DataFrame(
+        competition_page_data["Last Year Monthly Custom Rating"].to_list(),
+        index=competition_page_data["Name"]
+    ).T
+
+    # Replace null values with zeros
+    competition_page_for_linechart = competition_page_for_linechart.fillna(0)
+    
+    months = competition_page_for_linechart.index.tolist()
+    pizzeria_names = competition_page_for_linechart.columns.tolist()
+
+    # Multiselect for pizzerias
+    selected_pizzerias = st.multiselect(
+        "Select Pizzerias:",
+        label_visibility="collapsed",
+        placeholder="Seleziona pizzerie da confrontare",
+        help="Lista di pizzerie da visualizzare nel grafico a linee",
+        options=pizzeria_names,
+        default=name_of_my_pizzeria
+    )
+    month_names_abbr = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
+    month_names_full = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+                        "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
+
+    # Shift months so current month is last
+    current_month = datetime.now().month - 1
+    month_names_abbr_shifted = month_names_abbr[current_month+1:] + month_names_abbr[:current_month+1]
+    month_names_full_shifted = month_names_full[current_month+1:] + month_names_full[:current_month+1]
+
+    filtered_df = competition_page_for_linechart[selected_pizzerias].copy()
+    filtered_df = filtered_df.fillna(0)
+    filtered_df['Month_Num'] = months
+    filtered_df['Month_Abbr'] = filtered_df['Month_Num'].map(dict(enumerate(month_names_abbr_shifted)))
+    filtered_df['Month_Full'] = filtered_df['Month_Num'].map(dict(enumerate(month_names_full_shifted)))
+
+    chart_data = filtered_df[selected_pizzerias + ['Month_Num', 'Month_Abbr', 'Month_Full']].melt(
+        id_vars=['Month_Num', 'Month_Abbr', 'Month_Full'],
+        var_name='Pizzeria',
+        value_name='Value'
+    )
+
+    return chart_data, month_names_abbr_shifted
+
+
+def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str):
+    chart_data, month_names_abbr_shifted = prepare_data_for_linechart(competition_page_data, name_of_my_pizzeria)
+
+    # Check if chart_data is not empty before resizing
+    if not chart_data.empty:
+        y_min = chart_data['Value'].min()
+        y_max = chart_data['Value'].max()
+
+        if y_max < 0:
+            y_max = 10
+        if y_min > 0:
+            y_min = -10
+    else:
+        # Default y-axis if no data
+        y_min, y_max = -10, 10
+
+    # Define a hover selection
+    hover = alt.selection_single(
+        nearest=True,
+        on='mouseover',
+        empty='none',
+        clear='mouseout'
+    )
+
+    # Base line chart
+    line_chart = alt.Chart(chart_data).mark_line(
+        interpolate='monotone',
+        opacity=0.8
+    ).encode(
+        x=alt.X(
+            'Month_Num:Q',
+            axis=alt.Axis(
+                grid=False,
+                domain=True,
+                title="Mesi",
+                values=list(range(12)),
+                labelExpr=f'datum.value >= 0 ? {month_names_abbr_shifted} [datum.value] : datum.value'
+            )
+        ),
+        y=alt.Y(
+            'Value:Q',
+            scale=alt.Scale(domain=[y_min, y_max]),  # Set dynamic y-axis range
+            axis=alt.Axis(
+                grid=True,
+                labels=False,
+                domain=True,
+                title="Percezione pizzeria",
+                values=[0]
+            )
+        ),
+        color='Pizzeria',
+        tooltip=[
+            alt.Tooltip('Pizzeria:N', title='Pizzeria'),
+            alt.Tooltip('Month_Full:N', title='Mese'),
+            alt.Tooltip('Value:Q', title='Valore')
+        ]
+    ).properties(height=500)
+
+    # Points visible on hover
+    points = alt.Chart(chart_data).mark_point(size=100, filled=True).encode(
+        x='Month_Num:Q',
+        y='Value:Q',
+        color='Pizzeria:N',
+        tooltip=[
+            alt.Tooltip('Pizzeria:N', title='Pizzeria'),
+            alt.Tooltip('Month_Full:N', title='Mese')
+        ],
+        opacity=alt.condition(hover, alt.value(1), alt.value(0))
+    ).add_selection(
+        hover
+    )
+
+    final_chart = line_chart + points
+
+    return final_chart

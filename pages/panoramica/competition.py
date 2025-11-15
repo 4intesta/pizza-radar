@@ -1,12 +1,12 @@
 import streamlit as st
-import pydeck as pdk
 
 from database.mock_data import competition_page_data
 from pages.panoramica.components.utils import map_generator
 from pages.panoramica.components.utils import table_generator
 from pages.panoramica.components.utils import computation_of_historical_rankings
+from pages.panoramica.components.utils import linechart_generator
 
-st.write("Competition Page")
+st.title("Percezione nella tua zona")
 
 # Nome della pizzeria dell'utente
 name_of_my_pizzeria = "Pizzeria 4"
@@ -27,18 +27,18 @@ st.toggle(
     on_change=update_label,
 )
 
-# Genera e mostra la mappa
+# MAPPA
 map = map_generator(name_of_my_pizzeria, competition_page_data, st.session_state.toggle_on)
 st.pydeck_chart(map)
 
-# Calcola ranking per tabella e linechart
+tab_table, tab_line_chart, = st.tabs(["Vista Tabellare :material/table:", "Vista Storica :material/moving:"])
 competition_page_data = computation_of_historical_rankings(competition_page_data)
+with tab_table:
+    #TODO: Aggiungerei colonna "cosa va bene/male"
+    competition_page_for_table, columns_to_show, column_config = table_generator(competition_page_data, st.session_state.toggle_on)
+    st.write(competition_page_for_table)
+    st.dataframe(competition_page_for_table[columns_to_show], column_config=column_config)
 
-# Genera tabella
-competition_page_for_table, columns_to_show, column_config = table_generator(competition_page_data, st.session_state.toggle_on)
-st.dataframe(competition_page_for_table[columns_to_show], column_config=column_config)
-
-# Genera linechart
-#(si usa competition_page_data NON competition_page_for_table) 
-
-#print(competition_page_data.head())
+with tab_line_chart:
+    competition_page_for_linechart = linechart_generator(competition_page_data, name_of_my_pizzeria)
+    st.altair_chart(competition_page_for_linechart, use_container_width=True)
