@@ -68,12 +68,16 @@ ratings_30d_matrix = np.array([
     [daily_data_last_year[name][day]["rating"] for day in last_30_days_str]
     for name in names
 ])
+ratings_7d_matrix = ratings_30d_matrix[:, -7:]
 
 reviews_7d = daily_reviews_30d[:, -7:].sum(axis=1)
 reviews_30d = daily_reviews_30d.sum(axis=1)
-ratings_7d_matrix = ratings_30d_matrix[:, -7:]
-ratings_30d = np.round(ratings_30d_matrix.mean(axis=1), 2)
-ratings_7d = np.round(ratings_7d_matrix.mean(axis=1), 2)
+
+masked_30d = np.ma.masked_where(ratings_30d_matrix == 0, ratings_30d_matrix)
+ratings_30d = np.round(masked_30d.mean(axis=1), 2)
+
+masked_7d = np.ma.masked_where(ratings_7d_matrix == 0, ratings_7d_matrix)
+ratings_7d = np.round(masked_7d.mean(axis=1), 2)
 
 competition_page_data = pd.DataFrame({
     "Name": names,

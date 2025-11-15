@@ -247,9 +247,6 @@ def table_generator(competition_page_data: pd.DataFrame, toggle_on: bool = False
         rank_change_colum_name = "rank_change_weekly"
         rank_change_colum_help = "Variazione classifica gradimento rispetto alla settimana scorsa"
 
-
-    #TODO: prova a mettere None al posto di valutazione recensione = 0 
-
     columns_to_show = [
         "Name", 
         "Mean Price", 
@@ -271,7 +268,6 @@ def table_generator(competition_page_data: pd.DataFrame, toggle_on: bool = False
             width="medium",
             help="Nome della pizzeria"
         ),
-        #TODO: risolvi il fatto che la media tenga in considerazione gli zeri
         average_rating_column_name: st.column_config.ProgressColumn(
             "Valutazione ⭐️",
             format="%.1f",
