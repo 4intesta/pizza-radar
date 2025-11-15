@@ -28,6 +28,7 @@ st.toggle(
     on_change=update_label,
 )
 
+st.write("Mappa della zona :material/map:")
 # MAPPA
 map = map_generator(name_of_my_pizzeria, competition_page_data, st.session_state.toggle_on)
 st.pydeck_chart(map)
@@ -37,8 +38,10 @@ competition_page_data = computation_of_historical_rankings(competition_page_data
 with tab_table:
     #TODO: Aggiungerei colonna "cosa va bene/male"
     competition_page_for_table, columns_to_show, column_config = table_generator(competition_page_data, st.session_state.toggle_on)
-    st.dataframe(competition_page_for_table[columns_to_show], column_config=column_config)
+    st.dataframe(competition_page_for_table[columns_to_show], column_config=column_config, height=506)
+    st.write("aaaa")
 
 with tab_line_chart:
     competition_page_for_linechart = linechart_generator(competition_page_data, name_of_my_pizzeria)
     st.altair_chart(competition_page_for_linechart, use_container_width=True)
+    st.write("aaaa")

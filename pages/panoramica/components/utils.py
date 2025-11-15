@@ -417,7 +417,7 @@ def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria
             alt.Tooltip('Month_Full:N', title='Mese'),
             alt.Tooltip('Value:Q', title='Valore')
         ]
-    ).properties(height=500)
+    ).properties(height=450)
 
     # Points visible on hover
     points = alt.Chart(chart_data).mark_point(size=100, filled=True).encode(
