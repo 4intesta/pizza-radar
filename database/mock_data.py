@@ -11,7 +11,12 @@ np.random.seed(42)
 names = [f"Pizzeria {i}" for i in range(1, 21)]
 latitudes = np.random.uniform(40.745, 40.755, size=20)
 longitudes = np.random.uniform(-73.955, -73.945, size=20)
-mean_prices = np.round(np.random.uniform(5, 20, size=20), 2)
+mean_prices = [
+    "€", "€€", "€€€", "€", "€€",
+    "€€€", "€", "€€", "€€€", "€",
+    "€€", "€€€", "€", "€€", "€€€",
+    "€", "€€", "€€€", "€", "€€"
+]
 
 today = dt.date.today()
 dates_last_year = [today - dt.timedelta(days=i) for i in range(364, -1, -1)]
@@ -53,6 +58,42 @@ for name in names:
             "rating": daily_rating
         }
 
+import random
+
+# =========================
+# ARRAY DI TAG
+# =========================
+tags = [
+  "Napoletana","Romana","Gourmet","Classica","In teglia","Al taglio","A pala",
+  "Senza glutine","Integrale","Canotto / Cornicione alto",
+  "Forno a legna","Forno elettrico","Forno a gas","Cottura su pietra refrattaria",
+  "Alta idratazione","Lievitazione lunga (24/48/72h)",
+  "Ingredienti DOP/IGP","Mozzarella di bufala","Pomodoro San Marzano","Farine bio",
+  "Impasto multicereali","Prodotti a km 0","Ingredienti stagionali","Impasto digeribile",
+  "Tradizionale","Moderna","Street food","Family friendly","Rustica","Gourmet / di design",
+  "Casual","Panoramica / vista mare","Vegetariana","Vegana","Senza lattosio",
+  "Senza glutine certificato","Halal","Asporto","Consegna a domicilio","Prenotazione online",
+  "Tavoli all’aperto","Menù degustazione","Carta dei vini","Birre artigianali",
+  "Pagamenti digitali","Parcheggio","Dog-friendly","Economica","Media","Premium",
+  "Gourmet / alta fascia","Pizza fritta","Calzone","Panuozzo","Pizza dolce",
+  "Pizza creativa del mese"
+]
+
+# =========================
+# CREATE STRUCTURE FOR TAG STORAGE
+# =========================
+today = dt.date.today()
+months_last_year = [(today - relativedelta(months=i)).strftime("%Y-%m") for i in range(11, -1, -1)]
+
+hot_topics_for_the_month = {
+    name: {
+        month: {
+            "rating": random.sample(tags, k=3)
+        }
+        for month in months_last_year
+    }
+    for name in names
+}
 
 # =========================
 # DATA MANIPULATION
@@ -91,6 +132,14 @@ competition_page_data = pd.DataFrame({
     "Average Rating last 30 days": ratings_30d,
     "Mean Price": mean_prices
 })
+
+#adding labels
+for month in months_last_year:
+    competition_page_data[f"Tags {month}"] = None
+
+for idx, name in enumerate(names):
+    for month in months_last_year:
+        competition_page_data.at[idx, f"Tags {month}"] = hot_topics_for_the_month[name][month]["rating"]
 
 # ----------------------------------------------------
 # Compute MONTHLY historical data from daily_data_last_year

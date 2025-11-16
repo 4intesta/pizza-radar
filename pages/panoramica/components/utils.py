@@ -282,10 +282,9 @@ def table_generator(competition_page_data: pd.DataFrame, toggle_on: bool = False
             help=number_of_reviews_help
         ),
         "Mean Price": st.column_config.NumberColumn(
-            "Prezzo medio",
+            "Fascia di prezzo",
             format="euro",
-            width="small",
-            help="Prezzo medio delle pizze"
+            width="small"
         ),
         "Distance_m_rounded": st.column_config.NumberColumn(
             "Distanza da te",
@@ -312,19 +311,40 @@ def table_generator(competition_page_data: pd.DataFrame, toggle_on: bool = False
     }
     return competition_page_for_table, columns_to_show, column_config
 
+# -----------------------------
+# Fixed pizzerias & colors
+# -----------------------------
+ALL_PIZZERIAS = [
+    "Pizzeria 1", "Pizzeria 2", "Pizzeria 3", "Pizzeria 4", "Pizzeria 5",
+    "Pizzeria 6", "Pizzeria 7", "Pizzeria 8", "Pizzeria 9", "Pizzeria 10",
+    "Pizzeria 11", "Pizzeria 12", "Pizzeria 13", "Pizzeria 14", "Pizzeria 15",
+    "Pizzeria 16", "Pizzeria 17", "Pizzeria 18", "Pizzeria 19", "Pizzeria 20"
+]
+
+FIXED_COLORS = [
+    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+    "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5",
+    "#c49c94", "#f7b6d2", "#c7c7c7", "#dbdb8d", "#9edae5"
+]
+
+COLOR_SCALE = alt.Scale(domain=ALL_PIZZERIAS, range=FIXED_COLORS)
+
+
+# -----------------------------
+# Prepare data function
+# -----------------------------
 def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str):
+    # Base ratings matrix
     competition_page_for_linechart = pd.DataFrame(
         competition_page_data["Last Year Monthly Custom Rating"].to_list(),
         index=competition_page_data["Name"]
-    ).T
+    ).T.fillna(0)
 
-    # Replace null values with zeros
-    competition_page_for_linechart = competition_page_for_linechart.fillna(0)
-    
     months = competition_page_for_linechart.index.tolist()
     pizzeria_names = competition_page_for_linechart.columns.tolist()
 
-    # Multiselect for pizzerias
+    # Streamlit multiselect
     selected_pizzerias = st.multiselect(
         "Select Pizzerias:",
         label_visibility="collapsed",
@@ -334,20 +354,31 @@ def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_p
         max_selections=10,
         default=name_of_my_pizzeria
     )
+
+    filtered_df = competition_page_for_linechart[selected_pizzerias].copy().fillna(0)
+
+    # Month names
     month_names_abbr = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
     month_names_full = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
                         "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
 
-    # Shift months so current month is last
+    # Shift months by current month
     current_month = datetime.now().month - 1
     month_names_abbr_shifted = month_names_abbr[current_month+1:] + month_names_abbr[:current_month+1]
     month_names_full_shifted = month_names_full[current_month+1:] + month_names_full[:current_month+1]
 
-    filtered_df = competition_page_for_linechart[selected_pizzerias].copy()
-    filtered_df = filtered_df.fillna(0)
     filtered_df['Month_Num'] = months
     filtered_df['Month_Abbr'] = filtered_df['Month_Num'].map(dict(enumerate(month_names_abbr_shifted)))
     filtered_df['Month_Full'] = filtered_df['Month_Num'].map(dict(enumerate(month_names_full_shifted)))
+
+    # -----------------------------
+    # Extract tags
+    # -----------------------------
+    tag_columns = sorted([col for col in competition_page_data.columns if col.startswith("Tags ")])
+    tags_matrix = {
+        p: competition_page_data.loc[competition_page_data["Name"] == p, tag_columns].values[0].tolist()
+        for p in selected_pizzerias
+    }
 
     chart_data = filtered_df[selected_pizzerias + ['Month_Num', 'Month_Abbr', 'Month_Full']].melt(
         id_vars=['Month_Num', 'Month_Abbr', 'Month_Full'],
@@ -355,38 +386,42 @@ def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_p
         value_name='Value'
     )
 
+    tags_list = []
+    for _, row in chart_data.iterrows():
+        p = row["Pizzeria"]
+        m = int(row["Month_Num"])
+        tags_list.append(tags_matrix[p][m])  # 3 tags per month
+
+    chart_data["Tags"] = tags_list
+
     return chart_data, month_names_abbr_shifted
 
-
+# -----------------------------
+# Line chart generator
+# -----------------------------
 def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str):
     chart_data, month_names_abbr_shifted = prepare_data_for_linechart(competition_page_data, name_of_my_pizzeria)
 
-    # Check if chart_data is not empty before resizing
+    chart_height = 500
+
+    # Y-axis bounds
     if not chart_data.empty:
         y_min = chart_data['Value'].min()
         y_max = chart_data['Value'].max()
-
-        if y_max < 0:
-            y_max = 10
-        if y_min > 0:
-            y_min = -10
+        if y_max < 0: y_max = 10
+        if y_min > 0: y_min = -10
     else:
-        # Default y-axis if no data
         y_min, y_max = -10, 10
 
-    # Define a hover selection
-    hover = alt.selection_single(
-        nearest=True,
-        on='mouseover',
-        empty='none',
-        clear='mouseout'
-    )
+    hover = alt.selection_single(nearest=True, on='mouseover', empty='none', clear='mouseout')
 
-    # Base line chart
-    line_chart = alt.Chart(chart_data).mark_line(
-        interpolate='monotone',
-        opacity=0.8
-    ).encode(
+    chart_data["Tags_Str"] = chart_data["Tags"].apply(lambda x: " - ".join(x))
+
+    # Suppose selected_pizzerias comes from your multiselect
+    selected_pizzerias = chart_data['Pizzeria'].unique().tolist()
+
+    # Main line chart
+    line_chart = alt.Chart(chart_data).mark_line(interpolate='monotone', opacity=0.8).encode(
         x=alt.X(
             'Month_Num:Q',
             axis=alt.Axis(
@@ -401,38 +436,38 @@ def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria
         ),
         y=alt.Y(
             'Value:Q',
-            scale=alt.Scale(domain=[y_min, y_max]),  # Set dynamic y-axis range
-            axis=alt.Axis(
-                grid=True,
-                labels=False,
-                domain=True,
-                title="Percezione pizzeria",
-                titleFontSize=18,
-                values=[0]
-            )
+            scale=alt.Scale(domain=[y_min, y_max]),
+            axis=alt.Axis(grid=True, labels=False, domain=True, title="Percezione pizzeria", titleFontSize=18, values=[0])
         ),
-        color='Pizzeria',
+        color=alt.Color(
+            'Pizzeria:N',
+            scale=COLOR_SCALE,
+            legend=alt.Legend(values=selected_pizzerias)  # <-- only show selected pizzerias
+        ),
         tooltip=[
             alt.Tooltip('Pizzeria:N', title='Pizzeria'),
             alt.Tooltip('Month_Full:N', title='Mese'),
-            alt.Tooltip('Value:Q', title='Valore')
+            alt.Tooltip('Value:Q', title='Valore'),
+            alt.Tooltip('Tags_Str:N', title='Tags del mese')
         ]
-    ).properties(height=450)
+    ).properties(height=chart_height)
 
-    # Points visible on hover
+
+    # Hover points
     points = alt.Chart(chart_data).mark_point(size=100, filled=True).encode(
         x='Month_Num:Q',
         y='Value:Q',
-        color='Pizzeria:N',
+        color=alt.Color(
+            'Pizzeria:N',
+            scale=COLOR_SCALE,
+            legend=alt.Legend(values=selected_pizzerias)
+        ),
+        opacity=alt.condition(hover, alt.value(1), alt.value(0)),
         tooltip=[
             alt.Tooltip('Pizzeria:N', title='Pizzeria'),
-            alt.Tooltip('Month_Full:N', title='Mese')
-        ],
-        opacity=alt.condition(hover, alt.value(1), alt.value(0))
-    ).add_selection(
-        hover
-    )
+            alt.Tooltip('Month_Full:N', title='Mese'),
+            alt.Tooltip('Tags_Str:N', title='Aspetti ricorrenti')
+        ]
+    ).add_selection(hover).properties(height=chart_height)
 
-    final_chart = line_chart + points
-
-    return final_chart
+    return line_chart + points
