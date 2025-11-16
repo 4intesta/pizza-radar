@@ -5,12 +5,16 @@ from pages.panoramica.components.utils import map_generator
 from pages.panoramica.components.utils import table_generator
 from pages.panoramica.components.utils import computation_of_historical_rankings
 from pages.panoramica.components.utils import linechart_generator
-
-st.title("Percezione nella tua zona")
-st.write("Osserva come la tua pizzeria si colloca rispetto alle realtà attorno a te. La mappa mostra i competitor più vicini, mentre la tabella – ordinata in base alle pizze più apprezzate – ti offre un confronto immediato e intuitivo. Un insight chiaro per capire trend e opportunità.")
+from pages.panoramica.components.utils import render_review_tabs
 
 # Nome della pizzeria dell'utente
 name_of_my_pizzeria = "Pizzeria 4"
+
+st.title("Panoramica zona")
+st.markdown("Il modulo **Panoramica zona** mostra il :primary-background[gradimento percepito] della tua pizzeria e delle altre in zona, evidenziando trend di gradimento e fattori che li influenzano.  \n Questa vista permette di comprendere rapidamente cosa accade intorno a te e quali aspetti i clienti valorizzano o criticano maggiormente.")
+
+st.header("Percezione attuale")
+st.write("La sezione **Percezione attuale** mostra la percezione recente tua pizzeria e delle altre in zona tramite mappa o tabella. Usa il toggle per visionare i dati degli ultimi 7 o 30 giorni.")
 
 # Toggle settimana/mese
 if "toggle_on" not in st.session_state:
@@ -28,20 +32,24 @@ st.toggle(
     on_change=update_label,
 )
 
-st.write("Mappa della zona :material/map:")
-# MAPPA
-map = map_generator(name_of_my_pizzeria, competition_page_data, st.session_state.toggle_on)
-st.pydeck_chart(map)
+tab_map, tab_table, = st.tabs(["Mappa della zona :material/map:", "Vista Tabellare :material/table:"])
+with tab_map:
+    map = map_generator(name_of_my_pizzeria, competition_page_data, st.session_state.toggle_on)
+    st.pydeck_chart(map)
 
-tab_table, tab_line_chart, = st.tabs(["Vista Tabellare :material/table:", "Vista Storica :material/moving:"])
 competition_page_data = computation_of_historical_rankings(competition_page_data)
 with tab_table:
-    #TODO: Aggiungerei colonna "cosa va bene/male"
     competition_page_for_table, columns_to_show, column_config = table_generator(competition_page_data, st.session_state.toggle_on)
-    st.dataframe(competition_page_for_table[columns_to_show], column_config=column_config, height=506)
-    st.write("aaaa")
+    st.dataframe(competition_page_for_table[columns_to_show], column_config=column_config, height=500)
 
-with tab_line_chart:
-    competition_page_for_linechart = linechart_generator(competition_page_data, name_of_my_pizzeria)
-    st.altair_chart(competition_page_for_linechart, use_container_width=True)
-    st.write("aaaa")
+st.divider()
+st.header("Percezione storica")
+st.write("La sezione **Percezione storica** visualizza il trend dell’ultimo anno della tua pizzeria e delle altre in zona tramite diagramma. Confronta più pizzerie selezionandole dal menu a tendina.")
+competition_page_for_linechart = linechart_generator(competition_page_data, name_of_my_pizzeria)
+st.altair_chart(competition_page_for_linechart, use_container_width=True)
+
+st.divider()
+st.header("In evidenza")
+st.write("La sezione **In evidenza** mostra le pizzerie che si sono contraddistinte negli ultimi 7 giorni.")
+
+render_review_tabs(competition_page_data, name_of_my_pizzeria)

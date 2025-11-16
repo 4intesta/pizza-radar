@@ -2,11 +2,12 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 from dateutil.relativedelta import relativedelta
+import random
 
 np.random.seed(42)
 
 # =========================
-# MOCK RAW DATA FROM DB
+# 1. BASIC SETTINGS
 # =========================
 names = [f"Pizzeria {i}" for i in range(1, 21)]
 latitudes = np.random.uniform(40.745, 40.755, size=20)
@@ -21,7 +22,9 @@ mean_prices = [
 today = dt.date.today()
 dates_last_year = [today - dt.timedelta(days=i) for i in range(364, -1, -1)]
 
-# --- Base values for each pizzeria ---
+# =========================
+# 2. BASE DATA PER PIZZERIA
+# =========================
 base_values = {
     name: {
         "reviews": int(np.random.randint(0, 15)),
@@ -30,12 +33,14 @@ base_values = {
     for name in names
 }
 
-# Set rating to 0 if reviews is 0
+# Rating = 0 if reviews = 0
 for name, values in base_values.items():
     if values["reviews"] == 0:
         values["rating"] = 0.0
 
-# --- Daily fluctuating data ---
+# =========================
+# 3. DAILY FLUCTUATING DATA FOR 1 YEAR
+# =========================
 daily_data_last_year = {}
 
 for name in names:
@@ -44,24 +49,23 @@ for name in names:
     base_rating = base_values[name]["rating"]
     
     for date in dates_last_year:
-        # Reviews fluctuate ±3 (but never below 0)
+
+        # Daily reviews fluctuate around base
         daily_reviews = max(0, int(np.random.normal(base_reviews, 2)))
-        
-        # Rating fluctuates ±0.5 around base (clipped 1.0 to 5.0)
+
+        # Ratings fluctuate, but 0 if no reviews
         if daily_reviews == 0:
             daily_rating = 0.0
         else:
             daily_rating = float(np.clip(np.random.normal(base_rating, 0.3), 1.0, 5.0))
-        
+
         daily_data_last_year[name][str(date)] = {
             "reviews": daily_reviews,
             "rating": daily_rating
         }
 
-import random
-
 # =========================
-# ARRAY DI TAG
+# 4. TAGS
 # =========================
 tags = [
   "Napoletana","Romana","Gourmet","Classica","In teglia","Al taglio","A pala",
@@ -80,9 +84,8 @@ tags = [
 ]
 
 # =========================
-# CREATE STRUCTURE FOR TAG STORAGE YEARLY
+# 5. TAGS - MONTHLY, 30D, 7D
 # =========================
-today = dt.date.today()
 months_last_year = [(today - relativedelta(months=i)).strftime("%Y-%m") for i in range(11, -1, -1)]
 
 hot_topics_for_the_month = {
@@ -95,24 +98,19 @@ hot_topics_for_the_month = {
     for name in names
 }
 
-# =========================
-# CREA HOT TOPICS PER ULTIMI 30 E 7 GIORNI
-# =========================
 hot_topics_last_30d = {}
 hot_topics_last_7d = {}
 
 for name in names:
-    # 3 tag casuali dai tag generali
     last_30d_tags = random.sample(tags, k=3)
     hot_topics_last_30d[name] = last_30d_tags
     
-    # 0, 1 o 2 tag presi dai 3 di hot_topics_last_30d
     n_tags_7d = random.randint(0, 2)
     last_7d_tags = random.sample(last_30d_tags, k=n_tags_7d)
     hot_topics_last_7d[name] = last_7d_tags
 
 # =========================
-# DATA MANIPULATION
+# 6. EXTRACT LAST 30 DAYS DATA
 # =========================
 last_30_days = [today - dt.timedelta(days=i) for i in range(29, -1, -1)]
 last_30_days_str = [str(d) for d in last_30_days]
@@ -121,21 +119,42 @@ daily_reviews_30d = np.array([
     [daily_data_last_year[name][day]["reviews"] for day in last_30_days_str]
     for name in names
 ])
+
 ratings_30d_matrix = np.array([
     [daily_data_last_year[name][day]["rating"] for day in last_30_days_str]
     for name in names
 ])
-ratings_7d_matrix = ratings_30d_matrix[:, -7:]
 
-reviews_7d = daily_reviews_30d[:, -7:].sum(axis=1)
-reviews_30d = daily_reviews_30d.sum(axis=1)
+# =========================
+# 7. REVIEW COUNTS
+# =========================
+reviews_7d_matrix = daily_reviews_30d[:, -7:]
+reviews_30d_matrix = daily_reviews_30d
 
-masked_30d = np.ma.masked_where(ratings_30d_matrix == 0, ratings_30d_matrix)
-ratings_30d = np.round(masked_30d.mean(axis=1), 2)
+reviews_7d = reviews_7d_matrix.sum(axis=1)
+reviews_30d = reviews_30d_matrix.sum(axis=1)
 
-masked_7d = np.ma.masked_where(ratings_7d_matrix == 0, ratings_7d_matrix)
-ratings_7d = np.round(masked_7d.mean(axis=1), 2)
+# =========================
+# 8. WEIGHTED AVERAGE RATINGS
+# =========================
 
+# Weighted average for last 7 days
+weighted_sum_7d = (ratings_30d_matrix[:, -7:] * reviews_7d_matrix).sum(axis=1)
+ratings_7d = np.round(
+    np.divide(weighted_sum_7d, reviews_7d, out=np.zeros_like(weighted_sum_7d), where=reviews_7d!=0),
+    2
+)
+
+# Weighted average for last 30 days
+weighted_sum_30d = (ratings_30d_matrix * reviews_30d_matrix).sum(axis=1)
+ratings_30d = np.round(
+    np.divide(weighted_sum_30d, reviews_30d, out=np.zeros_like(weighted_sum_30d), where=reviews_30d!=0),
+    2
+)
+
+# =========================
+# 9. FINAL DATAFRAME
+# =========================
 competition_page_data = pd.DataFrame({
     "Name": names,
     "Latitude": latitudes,
@@ -207,3 +226,77 @@ competition_page_data["Last Year Monthly Ratings"] = monthly_ratings
 
 print("\nCompetition_page_data (with monthly data):")
 print(competition_page_data[["Name", "Last Year Monthly Reviews", "Last Year Monthly Ratings"]].head())
+
+
+
+
+
+######################################
+reviews = [
+    {
+        "author": "Luca B.",
+        "date": "2024-02-10",
+        "platform": "Google",
+        "rating": 5,
+        "text": "Pizza eccellente, servizio veloce e personale gentilissimo.",
+        "subratings": {
+            "cibo": 5,
+            "qualità-prezzo": 4,
+            "servizio": 5,
+            "ambiente": 4
+        },
+        "tags": ["pizza", "servizio impeccabile", "familiare"],
+        "ownerResponse": True
+    },
+    {
+        "author": "Sara M.",
+        "date": "2024-02-08",
+        "platform": "TripAdvisor",
+        "rating": 4,
+        "text": "Buona pizza, locale accogliente ma tempi di attesa un po' lunghi.",
+        "subratings": {
+            "cibo": 4,
+            "qualità-prezzo": 4,
+            "servizio": 3,
+            "ambiente": 5
+        },
+        "tags": ["accogliente", "attesa lunga"],
+        "ownerResponse": True
+    },
+    {
+        "author": "Marco R.",
+        "date": "2024-02-02",
+        "platform": "TheFork",
+        "rating": 3,
+        "text": "Qualità discreta ma rapporto qualità-prezzo migliorabile.",
+        "subratings": {
+            "cibo": 3,
+            "qualità-prezzo": 2,
+            "servizio": 4,
+            "ambiente": 3
+        },
+        "tags": ["qualità-prezzo", "moderato"],
+        "ownerResponse": True
+    },
+    {
+        "author": "Giulia P.",
+        "date": "2024-01-28",
+        "platform": "Google",
+        "rating": 5,
+        "subratings": {
+            "cibo": 5,
+            "qualità-prezzo": 5,
+            "servizio": 5,
+            "ambiente": 4
+        },
+        "tags": ["top", "consigliato", "pizza eccellente"],
+        "ownerResponse": False
+    },
+    {
+        "author": "Andrea V.",
+        "date": "2024-01-20",
+        "platform": "TripAdvisor",
+        "rating": 2,
+        "ownerResponse": False
+    }
+]

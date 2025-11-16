@@ -4,7 +4,7 @@ import streamlit as st
 import numpy as np
 import altair as alt
 from datetime import datetime
-
+from database.mock_data import reviews
 
 def value_to_color(n):
     if n <= 3:
@@ -429,7 +429,7 @@ def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria
         y=alt.Y(
             'Value:Q',
             scale=alt.Scale(domain=[y_min, y_max]),
-            axis=alt.Axis(grid=True, labels=False, domain=True, title="Percezione pizzeria", titleFontSize=16, values=[0])
+            axis=alt.Axis(grid=True, labels=False, domain=True, title="Gradimento percepito ", titleFontSize=16, values=[0])
         ),
         color=alt.Color(
             'Pizzeria:N',
@@ -463,3 +463,91 @@ def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria
     ).add_selection(hover).properties(height=chart_height)
 
     return line_chart + points
+
+# -----------------------------
+# Tab generator
+# -----------------------------
+def render_review_tab(pizzeria, avg_eviews_rating_last_7_days, avg_reviews_number_7_days):
+    rating_generale_value = round(pizzeria["Average Rating last 7 days"].iloc[0],2)
+    rating_generale_diff = round(rating_generale_value - avg_eviews_rating_last_7_days, 1)
+
+    reviews_number_value = round(pizzeria["Number of Reviews last 7 days"].iloc[0],2)
+    reviews_number_diff = round(reviews_number_value - avg_reviews_number_7_days, 0)
+
+    #st.write(pizzeria)
+    st.subheader(pizzeria["Name"].iloc[0])
+
+    col1, col2 = st.columns([1.35, 4.1])
+    with col1:
+        st.metric(
+            "Rating Generale", 
+            rating_generale_value, 
+            f"{rating_generale_diff} rispetto a pizzerie in zona",
+            help="Valutazione generale delle recesioni degli ultimi 7 giorni.", 
+            border=True
+        )
+    
+        st.metric(
+            "Numero Recensioni Ricevute", 
+            reviews_number_value,
+            f"{reviews_number_diff:.0f} rispetto a pizzerie in zona",
+            chart_data=pizzeria['Daily Reviews (30d)'].iloc[0][-7:], 
+            chart_type="area",
+            help="Numero di recesioni degli ultimi 7 giorni.  \n Il grafico mostra come sono distribuite", 
+            border=True
+        )
+    
+    with col2:
+        st.write("Recensioni recenti:")
+        with st.container(height=322, border=False):
+            for comment in reviews:
+                label=comment["author"]+" ("+str(comment["date"])+") "+(comment["rating"]*":material/star:")+" - "+comment["platform"]
+                with st.expander(label=label):
+                    
+                    #TESTO
+                    text = comment.get("text") 
+                    if text:
+                        st.markdown(comment["text"])
+                    
+                    #TAGS
+                    missing_comment_warning = ""
+                    if comment["ownerResponse"] is False:
+                        missing_comment_warning = ":yellow-badge[:material/warning: Recensione senza tua risposta]"
+
+                    #SUBRATING
+                    subratings_string = ""
+                    subratings = comment.get("subratings", {})
+                    for label, value in subratings.items():
+                        if label=="cibo":
+                            subratings_string = subratings_string +" "+f":grey-badge[:material/local_pizza: {label.capitalize()}"+f": {value}]"
+                        elif label=="qualità-prezzo":
+                            subratings_string = subratings_string +" "+f":grey-badge[:material/money_bag: {label.capitalize()}"+f": {value}]"
+                        elif label=="servizio":
+                            subratings_string = subratings_string +" "+f":grey-badge[:material/hand_meal: {label.capitalize()}"+f": {value}]"
+                        elif label=="ambiente":
+                            subratings_string = subratings_string +" "+f":grey-badge[:material/candle: {label.capitalize()}"+f": {value}]"
+                    
+                    #TAGS
+                    tags_string = ""
+                    tags = comment.get("tags", [])
+                    for label in tags:
+                        tags_string = tags_string +" "+f":grey-badge[{label.capitalize()}]"
+
+                    if text is None and subratings_string == "" and tags_string == "":
+                        st.markdown("Questo commento è privo di contenuto")
+                        if missing_comment_warning != "":
+                            st.markdown(missing_comment_warning)
+
+                    else:
+                        st.markdown((missing_comment_warning+" "+subratings_string+" "+tags_string).strip())
+                    
+                    
+
+def render_review_tabs(competition_page_data, name_my_pizzeria):
+    tab_la_tua, tab_migliore, tab_peggiore, tab_di_moda = st.tabs(["La tua :material/person:", "La più apprezzata :material/crown:", " La meno amata :material/heart_broken:", "Di Moda :material/local_fire_department:"])
+    
+    avg_eviews_rating_last_7_days = competition_page_data["Average Rating last 7 days"].mean()
+    avg_reviews_number_7_days = competition_page_data["Number of Reviews last 7 days"].mean()
+    with tab_la_tua:
+        render_review_tab(competition_page_data.loc[competition_page_data["Name"] == name_my_pizzeria], avg_eviews_rating_last_7_days, avg_reviews_number_7_days)
+

@@ -8,7 +8,7 @@ p2 = st.Page("pages/analisi recensioni/coach.py", title="Coach", icon=":material
 p3 = st.Page("pages/metrics/your_metrics.py", title="Le tue metriche", icon=":material/search_insights:", url_path="le-tue-metriche")
 p4 = st.Page("pages/metrics/compare.py", title="Confrontati con altre pizzerie", icon=":material/compare_arrows:", url_path="confrontati-con-altre-pizzerie")
 p5 = st.Page("pages/altro/contact_us.py", title="Contattaci", icon=":material/mail:", url_path="contattaci")
-p6 = st.Page("pages/altro/account.py", title="Il tuo account", icon=":material/account_circle:", url_path="il-tuo-account")
+p6 = st.Page("pages/altro/account.py", title="Il tuo account", icon=":material/person:", url_path="il-tuo-account")
 
 # ---------------------------------------
 # Streamlit Page Configurations
