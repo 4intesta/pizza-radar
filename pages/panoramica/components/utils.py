@@ -234,25 +234,30 @@ def table_generator(competition_page_data: pd.DataFrame, toggle_on: bool = False
         average_rating_column_name = "Average Rating last 30 days"
         average_rating_column_help = "Valutazione generale degli ultimi 30 giorni"
         number_of_reviews_name = "Number of Reviews last 30 days"
-        number_of_reviews_help = "Numero di recensioni ultimi 30 giorni"
+        number_of_reviews_help = "Numero di recensioni degli ultimi 30 giorni"
         rank_change_colum_name = "rank_change_monthly"
         rank_change_colum_help = "Variazione classifica gradimento rispetto al mese scorso"
+        hot_topics_name = "hot_topics_last_30d"
+        hot_topics_help = "Temi ricorrenti nelle recensioni degli ultimi 30 giorni"
 
     else: #show weekly-related data
         gradimento_clienti_help = "Ordine basato sul numero e valutazione di recensioni ricevute negli ultimi 7 giorni"
         average_rating_column_name = "Average Rating last 7 days"
         average_rating_column_help = "Valutazione generale degli ultimi 7 giorni"
         number_of_reviews_name = "Number of Reviews last 7 days"
-        number_of_reviews_help = "Numero di recensioni ultimi 7 giorni"
+        number_of_reviews_help = "Numero di recensioni degli ultimi 7 giorni"
         rank_change_colum_name = "rank_change_weekly"
         rank_change_colum_help = "Variazione classifica gradimento rispetto alla settimana scorsa"
+        hot_topics_name = "hot_topics_last_7d"
+        hot_topics_help = "Temi ricorrenti nelle recensioni degli ultimi 7 giorni"
 
     columns_to_show = [
         "Name", 
         "Mean Price", 
+        hot_topics_name,
         average_rating_column_name, 
         number_of_reviews_name,
-        "Custom Score of Last Month - weekly-view", 
+        #"Custom Score of Last Month - weekly-view", 
         #TODO: per adesso nascondo le frecce variazione
         #rank_change_colum_name
     ]
@@ -268,6 +273,12 @@ def table_generator(competition_page_data: pd.DataFrame, toggle_on: bool = False
             width="medium",
             help="Nome della pizzeria"
         ),
+        hot_topics_name: st.column_config.MultiselectColumn(
+            "Temi ricorrenti",
+            color="primary",
+            width="wide",
+            help=hot_topics_help
+        ),
         average_rating_column_name: st.column_config.ProgressColumn(
             "Valutazione ⭐️",
             format="%.1f",
@@ -281,33 +292,15 @@ def table_generator(competition_page_data: pd.DataFrame, toggle_on: bool = False
             width="small",
             help=number_of_reviews_help
         ),
-        "Mean Price": st.column_config.NumberColumn(
+        "Mean Price": st.column_config.TextColumn(
             "Fascia di prezzo",
-            format="euro",
             width="small"
         ),
-        "Distance_m_rounded": st.column_config.NumberColumn(
-            "Distanza da te",
-            #width=100,
-            format="%d m",
-            help="Distanza stimata dalla tua pizzeria"
-        ),
         rank_change_colum_name: st.column_config.TextColumn(
             "Variazione",
             #width="small",
             help=rank_change_colum_help
-        ),
-        "Custom Score of Last Month - weekly-view": st.column_config.AreaChartColumn(
-            "Andamento Percezione",
-            color="auto",
-            width="medium",
-            help="Andamento percezione nell'ultimo mese basato sul numero e valutazione di recensioni ricevute"
-        ),
-        rank_change_colum_name: st.column_config.TextColumn(
-            "Variazione",
-            #width="small",
-            help=rank_change_colum_help
-        ),
+        )
     }
     return competition_page_for_table, columns_to_show, column_config
 
@@ -402,7 +395,7 @@ def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_p
 def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str):
     chart_data, month_names_abbr_shifted = prepare_data_for_linechart(competition_page_data, name_of_my_pizzeria)
 
-    chart_height = 500
+    chart_height = 450
 
     # Y-axis bounds
     if not chart_data.empty:
@@ -427,8 +420,7 @@ def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria
             axis=alt.Axis(
                 grid=False,
                 domain=True,
-                title="Mesi",
-                titleFontSize=18,
+                title=None,
                 labelFontSize=16,
                 values=list(range(12)),
                 labelExpr=f'datum.value >= 0 ? {month_names_abbr_shifted} [datum.value] : datum.value'
@@ -437,12 +429,12 @@ def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria
         y=alt.Y(
             'Value:Q',
             scale=alt.Scale(domain=[y_min, y_max]),
-            axis=alt.Axis(grid=True, labels=False, domain=True, title="Percezione pizzeria", titleFontSize=18, values=[0])
+            axis=alt.Axis(grid=True, labels=False, domain=True, title="Percezione pizzeria", titleFontSize=16, values=[0])
         ),
         color=alt.Color(
             'Pizzeria:N',
             scale=COLOR_SCALE,
-            legend=alt.Legend(values=selected_pizzerias)  # <-- only show selected pizzerias
+            legend=alt.Legend(values=selected_pizzerias)
         ),
         tooltip=[
             alt.Tooltip('Pizzeria:N', title='Pizzeria'),

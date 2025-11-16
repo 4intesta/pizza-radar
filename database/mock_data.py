@@ -80,7 +80,7 @@ tags = [
 ]
 
 # =========================
-# CREATE STRUCTURE FOR TAG STORAGE
+# CREATE STRUCTURE FOR TAG STORAGE YEARLY
 # =========================
 today = dt.date.today()
 months_last_year = [(today - relativedelta(months=i)).strftime("%Y-%m") for i in range(11, -1, -1)]
@@ -94,6 +94,22 @@ hot_topics_for_the_month = {
     }
     for name in names
 }
+
+# =========================
+# CREA HOT TOPICS PER ULTIMI 30 E 7 GIORNI
+# =========================
+hot_topics_last_30d = {}
+hot_topics_last_7d = {}
+
+for name in names:
+    # 3 tag casuali dai tag generali
+    last_30d_tags = random.sample(tags, k=3)
+    hot_topics_last_30d[name] = last_30d_tags
+    
+    # 0, 1 o 2 tag presi dai 3 di hot_topics_last_30d
+    n_tags_7d = random.randint(0, 2)
+    last_7d_tags = random.sample(last_30d_tags, k=n_tags_7d)
+    hot_topics_last_7d[name] = last_7d_tags
 
 # =========================
 # DATA MANIPULATION
@@ -140,6 +156,9 @@ for month in months_last_year:
 for idx, name in enumerate(names):
     for month in months_last_year:
         competition_page_data.at[idx, f"Tags {month}"] = hot_topics_for_the_month[name][month]["rating"]
+
+competition_page_data["hot_topics_last_30d"] = competition_page_data["Name"].map(hot_topics_last_30d)
+competition_page_data["hot_topics_last_7d"] = competition_page_data["Name"].map(hot_topics_last_7d)
 
 # ----------------------------------------------------
 # Compute MONTHLY historical data from daily_data_last_year
