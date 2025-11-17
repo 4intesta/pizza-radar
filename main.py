@@ -16,11 +16,23 @@ p6 = st.Page("pages/altro/account.py", title="Il tuo account", icon=":material/p
 st.set_page_config(layout="wide")
 st.write('<style>div.block-container{padding-top:4rem;}</style>', unsafe_allow_html=True)
 
+def compute_logged_out_page():
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.container()
+    with col2:
+        with st.container(border=False):
+            st.title(":material/warning: Non sei connesso")
+            st.write("Accedi alla piattaforma per monitorare il gradimento dei clienti, seguire le tendenze vincenti e ricevere consigli pratici dal coach.")
+            if st.button("Login", width="stretch", type="primary"):
+                st.login("auth0")
+            st.link_button("Scopri tutte le funzionalità", "https://competio.lovable.app/competio-pizzeria", width="stretch")
+    with col3:
+        st.container()
 
 
 if not st.user.is_logged_in:
-    if st.button("Authenticate"):
-        st.login("auth0")
+    compute_logged_out_page()
 else:
     pg = st.navigation({
         "Panoramica": [p1],
