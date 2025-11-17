@@ -323,11 +323,33 @@ FIXED_COLORS = [
 
 COLOR_SCALE = alt.Scale(domain=ALL_PIZZERIAS, range=FIXED_COLORS)
 
+def get_best_and_worst_last_30d_for_linechart(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str):
+    competition_page_data = competition_page_data.copy()
+    competition_page_data["score"] = (
+        competition_page_data["Number of Reviews last 30 days"] *
+        (competition_page_data["Average Rating last 30 days"] - 3)
+    )
+
+    # Sort descending for best
+    sorted_desc = competition_page_data.sort_values("score", ascending=False)
+    if sorted_desc.iloc[0]["Name"] == name_of_my_pizzeria and len(sorted_desc) > 1:
+        best = sorted_desc.iloc[1]["Name"]
+    else:
+        best = sorted_desc.iloc[0]["Name"]
+
+    # Sort ascending for worst
+    sorted_asc = competition_page_data.sort_values("score", ascending=True)
+    if sorted_asc.iloc[0]["Name"] == name_of_my_pizzeria and len(sorted_asc) > 1:
+        worst = sorted_asc.iloc[1]["Name"]
+    else:
+        worst = sorted_asc.iloc[0]["Name"]
+
+    return best, worst
 
 # -----------------------------
 # Prepare data function
 # -----------------------------
-def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str):
+def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str, best: str, worst: str):
     # Base ratings matrix
     competition_page_for_linechart = pd.DataFrame(
         competition_page_data["Last Year Monthly Custom Rating"].to_list(),
@@ -345,7 +367,7 @@ def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_p
         help="Lista di pizzerie da visualizzare nel grafico a linee",
         options=pizzeria_names,
         max_selections=10,
-        default=name_of_my_pizzeria
+        default=[name_of_my_pizzeria, best, worst]
     )
 
     filtered_df = competition_page_for_linechart[selected_pizzerias].copy().fillna(0)
@@ -392,8 +414,10 @@ def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_p
 # -----------------------------
 # Line chart generator
 # -----------------------------
-def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str):
-    chart_data, month_names_abbr_shifted = prepare_data_for_linechart(competition_page_data, name_of_my_pizzeria)
+def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str, toggle_on: bool = False):
+    best, worst = get_best_and_worst_last_30d_for_linechart(competition_page_data, name_of_my_pizzeria)
+
+    chart_data, month_names_abbr_shifted = prepare_data_for_linechart(competition_page_data, name_of_my_pizzeria, best, worst)
 
     chart_height = 450
 

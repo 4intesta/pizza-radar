@@ -18,7 +18,7 @@ st.markdown("Il modulo **Panoramica zona** mostra il :primary-background[gradime
 st.header("Percezione attuale")
 st.write("La sezione **Percezione attuale** mostra la percezione recente tua pizzeria e delle altre in zona tramite mappa o tabella. Usa il toggle per visionare i dati degli ultimi 7 o 30 giorni.")
 
-# Toggle settimana/mese
+# Toggle Percezione attuale settimana/mese
 if "toggle_on" not in st.session_state:
     st.session_state.toggle_on = False
 if "toggle_label" not in st.session_state:
@@ -47,7 +47,26 @@ with tab_table:
 st.divider()
 st.header("Percezione storica")
 st.write("La sezione **Percezione storica** visualizza il trend dell’ultimo anno della tua pizzeria e delle altre in zona tramite diagramma. Confronta più pizzerie selezionandole dal menu a tendina.")
-competition_page_for_linechart = linechart_generator(competition_page_data, name_of_my_pizzeria)
+
+# Toggle Percezione storica settimana/mese
+if "historical_toggle_on" not in st.session_state:
+    st.session_state.historical_toggle_on = False
+if "historical_toggle_label" not in st.session_state:
+    st.session_state.historical_toggle_label = "Percezione storica: ultimi 7 giorni"
+
+def update_historical_label():
+    if st.session_state.historical_toggle_on:
+        st.session_state.historical_toggle_label = "Ultimo mese"
+    else:
+        st.session_state.historical_toggle_label = "Ultimo anno"
+
+st.toggle(
+    st.session_state.historical_toggle_label,
+    key="historical_toggle_on",
+    on_change=update_historical_label,
+)
+
+competition_page_for_linechart = linechart_generator(competition_page_data, name_of_my_pizzeria, st.session_state.historical_toggle_on)
 st.altair_chart(competition_page_for_linechart, use_container_width=True)
 
 st.divider()

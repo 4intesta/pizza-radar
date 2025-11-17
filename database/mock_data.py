@@ -10,8 +10,8 @@ np.random.seed(42)
 # 1. BASIC SETTINGS
 # =========================
 names = [f"Pizzeria {i}" for i in range(1, 21)]
-latitudes = np.random.uniform(40.745, 40.755, size=20)
-longitudes = np.random.uniform(-73.955, -73.945, size=20)
+latitudes = np.random.uniform(45.468, 45.478, size=20)
+longitudes = np.random.uniform(9.182, 9.192, size=20)
 mean_prices = [
     "€", "€€", "€€€", "€", "€€",
     "€€€", "€", "€€", "€€€", "€",
