@@ -493,6 +493,7 @@ def render_review_tab(pizzeria, avg_eviews_rating_last_7_days, avg_reviews_numbe
             f"{reviews_number_diff:.0f} rispetto a pizzerie in zona",
             chart_data=pizzeria['Daily Reviews (30d)'].iloc[0][-7:], 
             chart_type="area",
+            delta_color="off",
             help="Numero di recesioni degli ultimi 7 giorni.  \n Il grafico mostra come sono distribuite", 
             border=True
         )
@@ -541,13 +542,18 @@ def render_review_tab(pizzeria, avg_eviews_rating_last_7_days, avg_reviews_numbe
                     else:
                         st.markdown((missing_comment_warning+" "+subratings_string+" "+tags_string).strip())
                     
-                    
+def get_best_last_7d(competition_page_data: pd.DataFrame):
+    competition_page_data["score"] = (
+        competition_page_data["Number of Reviews last 7 days"] * 
+        (competition_page_data["Average Rating last 7 days"] - 3)
+    )
+    best_row = competition_page_data.loc[competition_page_data["score"].idxmax()]
+    return best_row["Name"]
 
-def render_review_tabs(competition_page_data, name_my_pizzeria):
-    tab_la_tua, tab_migliore, tab_peggiore, tab_di_moda = st.tabs(["La tua :material/person:", "La più apprezzata :material/crown:", " La meno amata :material/heart_broken:", "Di Moda :material/local_fire_department:"])
-    
-    avg_eviews_rating_last_7_days = competition_page_data["Average Rating last 7 days"].mean()
-    avg_reviews_number_7_days = competition_page_data["Number of Reviews last 7 days"].mean()
-    with tab_la_tua:
-        render_review_tab(competition_page_data.loc[competition_page_data["Name"] == name_my_pizzeria], avg_eviews_rating_last_7_days, avg_reviews_number_7_days)
-
+def get_worst_last_7d(competition_page_data: pd.DataFrame):
+    competition_page_data["score"] = (
+        competition_page_data["Number of Reviews last 7 days"] * 
+        (competition_page_data["Average Rating last 7 days"] - 3)
+    )
+    worst_row = competition_page_data.loc[competition_page_data["score"].idxmin()]
+    return worst_row["Name"]

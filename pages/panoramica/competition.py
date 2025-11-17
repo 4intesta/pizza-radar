@@ -5,7 +5,9 @@ from pages.panoramica.components.utils import map_generator
 from pages.panoramica.components.utils import table_generator
 from pages.panoramica.components.utils import computation_of_historical_rankings
 from pages.panoramica.components.utils import linechart_generator
-from pages.panoramica.components.utils import render_review_tabs
+from pages.panoramica.components.utils import render_review_tab
+from pages.panoramica.components.utils import get_best_last_7d
+from pages.panoramica.components.utils import get_worst_last_7d
 
 # Nome della pizzeria dell'utente
 name_of_my_pizzeria = "Pizzeria 4"
@@ -52,4 +54,14 @@ st.divider()
 st.header("In evidenza")
 st.write("La sezione **In evidenza** mostra le pizzerie che si sono contraddistinte negli ultimi 7 giorni.")
 
-render_review_tabs(competition_page_data, name_of_my_pizzeria)
+tab_la_tua, tab_migliore, tab_peggiore = st.tabs(["La tua :material/person:", "La più apprezzata :material/crown:", " La meno amata :material/heart_broken:"])
+avg_eviews_rating_last_7_days = competition_page_data["Average Rating last 7 days"].mean()
+avg_reviews_number_7_days = competition_page_data["Number of Reviews last 7 days"].mean()
+with tab_la_tua:
+    render_review_tab(competition_page_data.loc[competition_page_data["Name"] == name_of_my_pizzeria], avg_eviews_rating_last_7_days, avg_reviews_number_7_days)
+with tab_migliore:
+    best_pizzeria = get_best_last_7d(competition_page_for_table)
+    render_review_tab(competition_page_data.loc[competition_page_data["Name"] == best_pizzeria], avg_eviews_rating_last_7_days, avg_reviews_number_7_days)
+with tab_peggiore:
+    worst_pizzeria = get_worst_last_7d(competition_page_for_table)
+    render_review_tab(competition_page_data.loc[competition_page_data["Name"] == worst_pizzeria], avg_eviews_rating_last_7_days, avg_reviews_number_7_days)
