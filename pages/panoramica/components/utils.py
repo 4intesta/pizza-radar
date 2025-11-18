@@ -171,7 +171,7 @@ def add_rank_change_columns(competition_page_data: pd.DataFrame) -> pd.DataFrame
 
     return df
 
-def computation_of_historical_rankings(competition_page_data: pd.DataFrame):    
+def computation_of_historical_monthly_rankings(competition_page_data: pd.DataFrame):
     # ----------------------------------------------------
     # Compute monthly custom rating
     # ----------------------------------------------------
@@ -193,6 +193,31 @@ def computation_of_historical_rankings(competition_page_data: pd.DataFrame):
         monthly_ranks[:, month_idx] = ranks
 
     competition_page_data["Last Year Monthly Rank"] = monthly_ranks.tolist()
+
+    return competition_page_data
+
+def computation_of_historical_weekly_rankings(competition_page_data: pd.DataFrame):
+    # ----------------------------------------------------
+    # Compute weekly custom rating
+    # ----------------------------------------------------
+    num_weeks = 52
+    competition_page_data["Last Year Weekly Custom Rating"] = [
+        [reviews[i] * (ratings[i] - 3) for i in range(num_weeks)]
+        for reviews, ratings in zip(competition_page_data["Last Year Weekly Reviews"], competition_page_data["Last Year Weekly Ratings"])
+    ]
+    
+    # Compute monthly rankings
+    weekly_custom_matrix = np.array(competition_page_data["Last Year Weekly Custom Rating"].to_list())  # shape: (num_pizzerias, 52)
+    weekly_ranks = np.zeros_like(weekly_custom_matrix, dtype=int)
+    
+    for week_idx in range(num_weeks):
+        week_scores = weekly_custom_matrix[:, week_idx]
+        sorted_indices = np.argsort(-week_scores)
+        ranks = np.empty_like(sorted_indices)
+        ranks[sorted_indices] = np.arange(1, len(week_scores)+1)
+        weekly_ranks[:, week_idx] = ranks
+
+    competition_page_data["Last Year Weekly Rank"] = weekly_ranks.tolist()
     
     return competition_page_data
     
