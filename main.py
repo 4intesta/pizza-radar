@@ -22,9 +22,9 @@ def compute_logged_out_page():
         st.container()
     with col2:
         with st.container(border=False):
-            st.title(":material/warning: Non sei connesso")
+            st.title("Effettua l'accesso")
             st.write("Accedi alla piattaforma per monitorare il gradimento dei clienti, seguire le tendenze vincenti e ricevere consigli pratici dal coach.")
-            if st.button("Login", width="stretch", type="primary"):
+            if st.button("Accedi alla piattaforma", width="stretch", type="primary"):
                 st.login("auth0")
             st.link_button("Scopri tutte le funzionalità", "https://competio.lovable.app/competio-pizzeria", width="stretch")
     with col3:
