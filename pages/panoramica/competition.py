@@ -15,12 +15,12 @@ name_of_my_pizzeria = "Pizzeria 4"
 st.title("Panoramica zona")
 st.markdown("Il modulo **Panoramica zona** mostra il :primary-background[gradimento percepito] della tua pizzeria e delle altre in zona, evidenziando trend di gradimento e fattori che li influenzano.  \n Questa vista permette di comprendere rapidamente cosa accade intorno a te e quali aspetti i clienti valorizzano o criticano maggiormente.")
 
-options = ["**Percezione attuale**", "**Percezione storica**", "**In evidenza**"]
-selection = st.segmented_control("Directions", options, selection_mode="single", default="**Percezione attuale**" , label_visibility="collapsed", width="stretch")
+options = ["**Ultimi giorni**", "**Storico**", "**In evidenza**"]
+selection = st.segmented_control("Directions", options, selection_mode="single", default="**Ultimi giorni**" , label_visibility="collapsed", width="stretch")
 
 with st.container(height=675, border=False):
-    if selection == "**Percezione attuale**":
-        st.write("La sezione **Percezione attuale** mostra la percezione recente tua pizzeria e delle altre in zona tramite mappa o tabella. Usa il toggle per visionare i dati degli ultimi 7 o 30 giorni.")
+    if selection == "**Ultimi giorni**":
+        st.write("La sezione **Ultimi giorni** mostra la percezione recente tua pizzeria e delle altre in zona tramite mappa o tabella. Usa il toggle per visionare i dati degli ultimi 7 o 30 giorni.")
 
         # Toggle Percezione attuale settimana/mese
         if "toggle_on" not in st.session_state:
@@ -49,8 +49,8 @@ with st.container(height=675, border=False):
             st.dataframe(competition_page_for_table[columns_to_show], column_config=column_config, height=500)
 
 
-    if selection == "**Percezione storica**":
-        st.write("La sezione **Percezione storica** visualizza il trend dell’ultimo anno della tua pizzeria e delle altre in zona tramite diagramma. Confronta più pizzerie selezionandole dal menu a tendina.")
+    if selection == "**Storico**":
+        st.write("La sezione **Storico** visualizza il trend dell’ultimo anno della tua pizzeria e delle altre in zona tramite diagramma. Confronta più pizzerie selezionandole dal menu a tendina.")
 
         # Toggle Percezione storica settimana/mese
         if "historical_toggle_on" not in st.session_state:
