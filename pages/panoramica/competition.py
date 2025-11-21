@@ -4,7 +4,8 @@ from database.mock_data import competition_page_data
 from pages.panoramica.components.utils import map_generator
 from pages.panoramica.components.utils import table_generator
 from pages.panoramica.components.utils import computation_of_historical_monthly_rankings
-from pages.panoramica.components.utils import linechart_generator
+from pages.panoramica.components.utils import linechart_generator_year
+from pages.panoramica.components.utils import linechart_generator_4month
 from pages.panoramica.components.utils import render_review_tab
 from pages.panoramica.components.utils import get_best_last_7d
 from pages.panoramica.components.utils import get_worst_last_7d
@@ -71,18 +72,18 @@ if selection == "**Ultimi giorni**":
         on_change=update_label,
     )
 
-    tab_map, tab_table = st.tabs(["Mappa della zona :material/map:", "Vista Tabellare :material/table:"])
+    tab_table, tab_map = st.tabs(["Vista Tabellare :material/table:", "Mappa della zona :material/map:"])
     
-    with tab_map:
-        map_ = map_generator(name_of_my_pizzeria, competition_page_data, st.session_state.toggle_on)
-        st.pydeck_chart(map_)
-
     competition_page_data = computation_of_historical_monthly_rankings(competition_page_data)
     with tab_table:
         competition_page_for_table, columns_to_show, column_config = table_generator(
             competition_page_data, st.session_state.toggle_on
         )
         st.dataframe(competition_page_for_table[columns_to_show], column_config=column_config, height=500)
+    
+    with tab_map:
+        map_ = map_generator(name_of_my_pizzeria, competition_page_data, st.session_state.toggle_on)
+        st.pydeck_chart(map_)
 
 # ================= Sezione "Storico" =================
 if selection == "**Storico**":
@@ -107,12 +108,15 @@ if selection == "**Storico**":
     )
 
     if st.session_state.historical_toggle_on is False:
-        competition_page_for_linechart = linechart_generator(
+        competition_page_for_linechart = linechart_generator_year(
             competition_page_data, name_of_my_pizzeria, st.session_state.historical_toggle_on
         )
         st.altair_chart(competition_page_for_linechart, use_container_width=True)
     else:
-        st.write("Diagramma settimanale")
+        competition_page_for_linechart = linechart_generator_4month(
+            competition_page_data, name_of_my_pizzeria, st.session_state.historical_toggle_on
+        )
+        st.altair_chart(competition_page_for_linechart, use_container_width=True)
 
 # ================= Sezione "In evidenza" =================
 if selection == "**In evidenza**":

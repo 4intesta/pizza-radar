@@ -372,9 +372,9 @@ def get_best_and_worst_last_30d_for_linechart(competition_page_data: pd.DataFram
     return best, worst
 
 # -----------------------------
-# Prepare data function
+# Prepare data function Year
 # -----------------------------
-def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str, best: str, worst: str):
+def prepare_data_for_linechart_year(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str, best: str, worst: str):
     # Base ratings matrix
     competition_page_for_linechart = pd.DataFrame(
         competition_page_data["Last Year Monthly Custom Rating"].to_list(),
@@ -437,12 +437,154 @@ def prepare_data_for_linechart(competition_page_data: pd.DataFrame, name_of_my_p
     return chart_data, month_names_abbr_shifted
 
 # -----------------------------
-# Line chart generator
+# Prepare data function 4 Month
 # -----------------------------
-def linechart_generator(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str, toggle_on: bool = False):
+def prepare_data_for_linechart_4month(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str, best: str, worst: str):
+    # Base ratings matrix
+    competition_page_for_linechart = pd.DataFrame(
+        competition_page_data["Last Year Monthly Custom Rating"].to_list(),
+        index=competition_page_data["Name"]
+    ).T.fillna(0)
+
+    months = competition_page_for_linechart.index.tolist()
+    pizzeria_names = competition_page_for_linechart.columns.tolist()
+
+    # Streamlit multiselect
+    selected_pizzerias = st.multiselect(
+        "Select Pizzerias:",
+        label_visibility="collapsed",
+        placeholder="Seleziona pizzerie da confrontare",
+        help="Lista di pizzerie da visualizzare nel grafico a linee",
+        options=pizzeria_names,
+        max_selections=10,
+        default=[name_of_my_pizzeria, best, worst]
+    )
+
+    filtered_df = competition_page_for_linechart[selected_pizzerias].copy().fillna(0)
+
+    # Month names
+    month_names_abbr = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
+    month_names_full = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+                        "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
+
+    # Shift months by current month
+    current_month = datetime.now().month - 1
+    month_names_abbr_shifted = month_names_abbr[current_month+1:] + month_names_abbr[:current_month+1]
+    month_names_full_shifted = month_names_full[current_month+1:] + month_names_full[:current_month+1]
+
+    filtered_df['Month_Num'] = months
+    filtered_df['Month_Abbr'] = filtered_df['Month_Num'].map(dict(enumerate(month_names_abbr_shifted)))
+    filtered_df['Month_Full'] = filtered_df['Month_Num'].map(dict(enumerate(month_names_full_shifted)))
+
+    # -----------------------------
+    # Extract tags
+    # -----------------------------
+    tag_columns = sorted([col for col in competition_page_data.columns if col.startswith("Tags ")])
+    tags_matrix = {
+        p: competition_page_data.loc[competition_page_data["Name"] == p, tag_columns].values[0].tolist()
+        for p in selected_pizzerias
+    }
+
+    chart_data = filtered_df[selected_pizzerias + ['Month_Num', 'Month_Abbr', 'Month_Full']].melt(
+        id_vars=['Month_Num', 'Month_Abbr', 'Month_Full'],
+        var_name='Pizzeria',
+        value_name='Value'
+    )
+
+    tags_list = []
+    for _, row in chart_data.iterrows():
+        p = row["Pizzeria"]
+        m = int(row["Month_Num"])
+        tags_list.append(tags_matrix[p][m])  # 3 tags per month
+
+    chart_data["Tags"] = tags_list
+
+    return chart_data, month_names_abbr_shifted
+
+# -----------------------------
+# Line chart generator Last Year
+# -----------------------------
+def linechart_generator_year(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str, toggle_on: bool = False):
     best, worst = get_best_and_worst_last_30d_for_linechart(competition_page_data, name_of_my_pizzeria)
 
-    chart_data, month_names_abbr_shifted = prepare_data_for_linechart(competition_page_data, name_of_my_pizzeria, best, worst)
+    chart_data, month_names_abbr_shifted = prepare_data_for_linechart_year(competition_page_data, name_of_my_pizzeria, best, worst)
+
+    chart_height = 450
+
+    # Y-axis bounds
+    if not chart_data.empty:
+        y_min = chart_data['Value'].min()
+        y_max = chart_data['Value'].max()
+        if y_max < 0: y_max = 10
+        if y_min > 0: y_min = -10
+    else:
+        y_min, y_max = -10, 10
+
+    hover = alt.selection_single(nearest=True, on='mouseover', empty='none', clear='mouseout')
+
+    chart_data["Tags_Str"] = chart_data["Tags"].apply(lambda x: " - ".join(x))
+
+    # Suppose selected_pizzerias comes from your multiselect
+    selected_pizzerias = chart_data['Pizzeria'].unique().tolist()
+
+    # Main line chart
+    line_chart = alt.Chart(chart_data).mark_line(interpolate='monotone', opacity=0.8).encode(
+        x=alt.X(
+            'Month_Num:Q',
+            axis=alt.Axis(
+                grid=False,
+                domain=True,
+                title=None,
+                labelFontSize=16,
+                values=list(range(12)),
+                labelExpr=f'datum.value >= 0 ? {month_names_abbr_shifted} [datum.value] : datum.value'
+            )
+        ),
+        y=alt.Y(
+            'Value:Q',
+            scale=alt.Scale(domain=[y_min, y_max]),
+            axis=alt.Axis(grid=True, labels=False, domain=True, title="Gradimento percepito ", titleFontSize=16, values=[0])
+        ),
+        color=alt.Color(
+            'Pizzeria:N',
+            scale=COLOR_SCALE,
+            legend=alt.Legend(values=selected_pizzerias)
+        ),
+        tooltip=[
+            alt.Tooltip('Pizzeria:N', title='Pizzeria'),
+            alt.Tooltip('Month_Full:N', title='Mese'),
+            alt.Tooltip('Value:Q', title='Valore'),
+            alt.Tooltip('Tags_Str:N', title='Tags del mese')
+        ]
+    ).properties(height=chart_height)
+
+
+    # Hover points
+    points = alt.Chart(chart_data).mark_point(size=100, filled=True).encode(
+        x='Month_Num:Q',
+        y='Value:Q',
+        color=alt.Color(
+            'Pizzeria:N',
+            scale=COLOR_SCALE,
+            legend=alt.Legend(values=selected_pizzerias)
+        ),
+        opacity=alt.condition(hover, alt.value(1), alt.value(0)),
+        tooltip=[
+            alt.Tooltip('Pizzeria:N', title='Pizzeria'),
+            alt.Tooltip('Month_Full:N', title='Mese'),
+            alt.Tooltip('Tags_Str:N', title='Aspetti ricorrenti')
+        ]
+    ).add_selection(hover).properties(height=chart_height)
+
+    return line_chart + points
+
+# -----------------------------
+# Line chart generator Last 4 Months
+# -----------------------------
+def linechart_generator_4month(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str, toggle_on: bool = False):
+    best, worst = get_best_and_worst_last_30d_for_linechart(competition_page_data, name_of_my_pizzeria)
+
+    chart_data, month_names_abbr_shifted = prepare_data_for_linechart_4month(competition_page_data, name_of_my_pizzeria, best, worst)
 
     chart_height = 450
 
