@@ -223,6 +223,10 @@ def build_competition_page_data(
     for month in months_last_year:
         df[f"Tags {month}"] = [hot_topics_month[name][month]["rating"] for name in names]
 
+    # Weekly tags
+    for week in weeks_last_year:
+        df[f"Tags {week}"] = [hot_topics_week[name][week]["rating"] for name in names]
+
     # Weekly topics
     df["hot_topics_week"] = df["Name"].map(hot_topics_week)
 

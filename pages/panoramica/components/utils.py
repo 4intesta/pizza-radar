@@ -3,7 +3,8 @@ import pandas as pd
 import streamlit as st
 import numpy as np
 import altair as alt
-from datetime import datetime
+import calendar
+from datetime import datetime, timedelta
 from database.mock_data import reviews
 
 def value_to_color(n):
@@ -439,17 +440,27 @@ def prepare_data_for_linechart_year(competition_page_data: pd.DataFrame, name_of
 # -----------------------------
 # Prepare data function 4 Month
 # -----------------------------
-def prepare_data_for_linechart_4month(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str, best: str, worst: str):
-    # Base ratings matrix
+def prepare_data_for_linechart_4months(
+    competition_page_data: pd.DataFrame,
+    name_of_my_pizzeria: str,
+    best: str,
+    worst: str
+):
+    # -------------------------------------------
+    # Base weekly ratings matrix   (shape 52 x N)
+    # -------------------------------------------
     competition_page_for_linechart = pd.DataFrame(
-        competition_page_data["Last Year Monthly Custom Rating"].to_list(),
+        competition_page_data["Last Year Weekly Custom Rating"].to_list(),
         index=competition_page_data["Name"]
     ).T.fillna(0)
 
-    months = competition_page_for_linechart.index.tolist()
+
+    weeks = competition_page_for_linechart.index.tolist()
     pizzeria_names = competition_page_for_linechart.columns.tolist()
 
-    # Streamlit multiselect
+    # -------------------------------------------
+    # Streamlit Multiselect
+    # -------------------------------------------
     selected_pizzerias = st.multiselect(
         "Select Pizzerias:",
         label_visibility="collapsed",
@@ -462,44 +473,58 @@ def prepare_data_for_linechart_4month(competition_page_data: pd.DataFrame, name_
 
     filtered_df = competition_page_for_linechart[selected_pizzerias].copy().fillna(0)
 
-    # Month names
-    month_names_abbr = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
-    month_names_full = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
-                        "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
+    # -------------------------------------------
+    # Week Labels
+    # -------------------------------------------
+    # Example:
+    #   Week_Abbr: "W1", "W2", ...
+    #   Week_Full: "Settimana 1", "Settimana 2", ...
+    # -------------------------------------------
+    week_names_abbr = [f"W{w+1}" for w in range(52)]
+    week_names_full = [f"Settimana {w+1}" for w in range(52)]
 
-    # Shift months by current month
-    current_month = datetime.now().month - 1
-    month_names_abbr_shifted = month_names_abbr[current_month+1:] + month_names_abbr[:current_month+1]
-    month_names_full_shifted = month_names_full[current_month+1:] + month_names_full[:current_month+1]
+    # No shifting is needed unless desired; but if you want to align
+    # with “current week first” just like months, here it is:
+    current_week = datetime.now().isocalendar().week - 1
+    current_week = max(0, min(current_week, 51))  # clamp 0–51
 
-    filtered_df['Month_Num'] = months
-    filtered_df['Month_Abbr'] = filtered_df['Month_Num'].map(dict(enumerate(month_names_abbr_shifted)))
-    filtered_df['Month_Full'] = filtered_df['Month_Num'].map(dict(enumerate(month_names_full_shifted)))
+    week_names_abbr_shifted = week_names_abbr[current_week+1:] + week_names_abbr[:current_week+1]
+    week_names_full_shifted = week_names_full[current_week+1:] + week_names_full[:current_week+1]
 
-    # -----------------------------
-    # Extract tags
-    # -----------------------------
+    filtered_df["Week_Num"] = weeks
+    filtered_df["Week_Abbr"] = filtered_df["Week_Num"].map(dict(enumerate(week_names_abbr_shifted)))
+    filtered_df["Week_Full"] = filtered_df["Week_Num"].map(dict(enumerate(week_names_full_shifted)))
+
+    # -------------------------------------------
+    # Extract tags (identical logic, but index uses week)
+    # -------------------------------------------
     tag_columns = sorted([col for col in competition_page_data.columns if col.startswith("Tags ")])
     tags_matrix = {
         p: competition_page_data.loc[competition_page_data["Name"] == p, tag_columns].values[0].tolist()
         for p in selected_pizzerias
     }
 
-    chart_data = filtered_df[selected_pizzerias + ['Month_Num', 'Month_Abbr', 'Month_Full']].melt(
-        id_vars=['Month_Num', 'Month_Abbr', 'Month_Full'],
-        var_name='Pizzeria',
-        value_name='Value'
+    # -------------------------------------------
+    # Melt data for line chart
+    # -------------------------------------------
+    chart_data = filtered_df[selected_pizzerias + ["Week_Num", "Week_Abbr", "Week_Full"]].melt(
+        id_vars=["Week_Num", "Week_Abbr", "Week_Full"],
+        var_name="Pizzeria",
+        value_name="Value"
     )
 
+    # -------------------------------------------
+    # Add tags column aligned by week
+    # -------------------------------------------
     tags_list = []
     for _, row in chart_data.iterrows():
         p = row["Pizzeria"]
-        m = int(row["Month_Num"])
-        tags_list.append(tags_matrix[p][m])  # 3 tags per month
+        w = int(row["Week_Num"])
+        tags_list.append(tags_matrix[p][w])  # 3 tags per week
 
     chart_data["Tags"] = tags_list
 
-    return chart_data, month_names_abbr_shifted
+    return chart_data, week_names_abbr_shifted
 
 # -----------------------------
 # Line chart generator Last Year
@@ -581,12 +606,52 @@ def linechart_generator_year(competition_page_data: pd.DataFrame, name_of_my_piz
 # -----------------------------
 # Line chart generator Last 4 Months
 # -----------------------------
-def linechart_generator_4month(competition_page_data: pd.DataFrame, name_of_my_pizzeria: str, toggle_on: bool = False):
-    best, worst = get_best_and_worst_last_30d_for_linechart(competition_page_data, name_of_my_pizzeria)
+def linechart_generator_4months(
+    competition_page_data: pd.DataFrame,
+    name_of_my_pizzeria: str,
+    toggle_on: bool = False
+):
+    # Best & worst
+    best, worst = get_best_and_worst_last_30d_for_linechart(
+        competition_page_data,
+        name_of_my_pizzeria
+    )
 
-    chart_data, month_names_abbr_shifted = prepare_data_for_linechart_4month(competition_page_data, name_of_my_pizzeria, best, worst)
+    # Prepare weekly chart data
+    chart_data, _ = prepare_data_for_linechart_4months(
+        competition_page_data,
+        name_of_my_pizzeria,
+        best,
+        worst
+    )
 
     chart_height = 450
+
+    # Filter last 17 weeks
+    max_week = chart_data['Week_Num'].max()
+    min_week = max_week - 16
+    chart_data = chart_data[chart_data['Week_Num'] >= min_week].copy()
+    last_weeks = chart_data['Week_Num'].unique().tolist()
+
+    # -----------------------------
+    # Compute Italian week ranges
+    # -----------------------------
+    italian_months = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu",
+                      "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
+
+    week_ranges = {}
+    for w in last_weeks:
+        week_start = datetime.today() - timedelta(weeks=(max_week - w))
+        week_start = week_start - timedelta(days=week_start.weekday())  # Monday
+        week_end = week_start + timedelta(days=6)  # Sunday
+        start_day = week_start.day
+        end_day = week_end.day
+        month_name = italian_months[week_end.month - 1]
+        week_ranges[w] = f"{start_day}-{end_day} {month_name}"
+
+    # Add week range column for tooltip and x-axis labels
+    chart_data['Week_Range'] = chart_data['Week_Num'].map(week_ranges)
+    week_labels = [week_ranges[w] for w in last_weeks]
 
     # Y-axis bounds
     if not chart_data.empty:
@@ -597,61 +662,88 @@ def linechart_generator_4month(competition_page_data: pd.DataFrame, name_of_my_p
     else:
         y_min, y_max = -10, 10
 
-    hover = alt.selection_single(nearest=True, on='mouseover', empty='none', clear='mouseout')
+    # Hover selection
+    hover = alt.selection_single(
+        nearest=True,
+        on='mouseover',
+        empty='none',
+        clear='mouseout'
+    )
 
+    # Tags formatting
     chart_data["Tags_Str"] = chart_data["Tags"].apply(lambda x: " - ".join(x))
-
-    # Suppose selected_pizzerias comes from your multiselect
     selected_pizzerias = chart_data['Pizzeria'].unique().tolist()
 
-    # Main line chart
-    line_chart = alt.Chart(chart_data).mark_line(interpolate='monotone', opacity=0.8).encode(
-        x=alt.X(
-            'Month_Num:Q',
-            axis=alt.Axis(
-                grid=False,
-                domain=True,
-                title=None,
-                labelFontSize=16,
-                values=list(range(12)),
-                labelExpr=f'datum.value >= 0 ? {month_names_abbr_shifted} [datum.value] : datum.value'
-            )
-        ),
-        y=alt.Y(
-            'Value:Q',
-            scale=alt.Scale(domain=[y_min, y_max]),
-            axis=alt.Axis(grid=True, labels=False, domain=True, title="Gradimento percepito ", titleFontSize=16, values=[0])
-        ),
-        color=alt.Color(
-            'Pizzeria:N',
-            scale=COLOR_SCALE,
-            legend=alt.Legend(values=selected_pizzerias)
-        ),
-        tooltip=[
-            alt.Tooltip('Pizzeria:N', title='Pizzeria'),
-            alt.Tooltip('Month_Full:N', title='Mese'),
-            alt.Tooltip('Value:Q', title='Valore'),
-            alt.Tooltip('Tags_Str:N', title='Tags del mese')
-        ]
-    ).properties(height=chart_height)
+    # -----------------------------
+    # WEEKLY LINE CHART
+    # -----------------------------
+    line_chart = (
+        alt.Chart(chart_data)
+        .mark_line(interpolate='monotone', opacity=0.8)
+        .encode(
+            x=alt.X(
+                'Week_Num:Q',
+                scale=alt.Scale(domain=[min_week, max_week],  nice=False),
+                axis=alt.Axis(
+                    grid=False,
+                    domain=True,
+                    title=None,
+                    labelFontSize=16,
+                    values=last_weeks,
+                    labelExpr=f'{week_labels}[datum.value - {min_week}]'
+                )
+            ),
+            y=alt.Y(
+                'Value:Q',
+                scale=alt.Scale(domain=[y_min, y_max]),
+                axis=alt.Axis(
+                    grid=True,
+                    labels=False,
+                    domain=True,
+                    title="Gradimento percepito",
+                    titleFontSize=16,
+                    values=[0]
+                )
+            ),
+            color=alt.Color(
+                'Pizzeria:N',
+                scale=COLOR_SCALE,
+                legend=alt.Legend(values=selected_pizzerias)
+            ),
+            tooltip=[
+                alt.Tooltip('Pizzeria:N', title='Pizzeria'),
+                alt.Tooltip('Week_Range:N', title='Settimana'),
+                alt.Tooltip('Value:Q', title='Valore'),
+                alt.Tooltip('Tags_Str:N', title='Tags della settimana')
+            ]
+        )
+        .properties(height=chart_height)
+    )
 
-
-    # Hover points
-    points = alt.Chart(chart_data).mark_point(size=100, filled=True).encode(
-        x='Month_Num:Q',
-        y='Value:Q',
-        color=alt.Color(
-            'Pizzeria:N',
-            scale=COLOR_SCALE,
-            legend=alt.Legend(values=selected_pizzerias)
-        ),
-        opacity=alt.condition(hover, alt.value(1), alt.value(0)),
-        tooltip=[
-            alt.Tooltip('Pizzeria:N', title='Pizzeria'),
-            alt.Tooltip('Month_Full:N', title='Mese'),
-            alt.Tooltip('Tags_Str:N', title='Aspetti ricorrenti')
-        ]
-    ).add_selection(hover).properties(height=chart_height)
+    # -----------------------------
+    # HOVER POINTS
+    # -----------------------------
+    points = (
+        alt.Chart(chart_data)
+        .mark_point(size=100, filled=True)
+        .encode(
+            x='Week_Num:Q',
+            y='Value:Q',
+            color=alt.Color(
+                'Pizzeria:N',
+                scale=COLOR_SCALE,
+                legend=alt.Legend(values=selected_pizzerias)
+            ),
+            opacity=alt.condition(hover, alt.value(1), alt.value(0)),
+            tooltip=[
+                alt.Tooltip('Pizzeria:N', title='Pizzeria'),
+                alt.Tooltip('Week_Range:N', title='Settimana'),
+                alt.Tooltip('Tags_Str:N', title='Aspetti ricorrenti')
+            ]
+        )
+        .add_selection(hover)
+        .properties(height=chart_height)
+    )
 
     return line_chart + points
 

@@ -4,14 +4,18 @@ from database.mock_data import competition_page_data
 from pages.panoramica.components.utils import map_generator
 from pages.panoramica.components.utils import table_generator
 from pages.panoramica.components.utils import computation_of_historical_monthly_rankings
+from pages.panoramica.components.utils import computation_of_historical_weekly_rankings
 from pages.panoramica.components.utils import linechart_generator_year
-from pages.panoramica.components.utils import linechart_generator_4month
+from pages.panoramica.components.utils import linechart_generator_4months
 from pages.panoramica.components.utils import render_review_tab
 from pages.panoramica.components.utils import get_best_last_7d
 from pages.panoramica.components.utils import get_worst_last_7d
 
 # Nome della pizzeria dell'utente
 name_of_my_pizzeria = "Pizzeria 4"
+
+competition_page_data = computation_of_historical_monthly_rankings(competition_page_data)
+competition_page_data = computation_of_historical_weekly_rankings(competition_page_data)
 
 st.title("Panoramica zona")
 #st.markdown("Il modulo **Panoramica zona** mostra il :primary-background[gradimento percepito] della tua pizzeria e delle altre in zona, evidenziando trend di gradimento e fattori che li influenzano.  \n Questa vista permette di comprendere rapidamente cosa accade intorno a te e quali aspetti i clienti valorizzano o criticano maggiormente.")
@@ -74,7 +78,6 @@ if selection == "**Ultimi giorni**":
 
     tab_table, tab_map = st.tabs(["Vista Tabellare :material/table:", "Mappa della zona :material/map:"])
     
-    competition_page_data = computation_of_historical_monthly_rankings(competition_page_data)
     with tab_table:
         competition_page_for_table, columns_to_show, column_config = table_generator(
             competition_page_data, st.session_state.toggle_on
@@ -113,7 +116,7 @@ if selection == "**Storico**":
         )
         st.altair_chart(competition_page_for_linechart, use_container_width=True)
     else:
-        competition_page_for_linechart = linechart_generator_4month(
+        competition_page_for_linechart = linechart_generator_4months(
             competition_page_data, name_of_my_pizzeria, st.session_state.historical_toggle_on
         )
         st.altair_chart(competition_page_for_linechart, use_container_width=True)
