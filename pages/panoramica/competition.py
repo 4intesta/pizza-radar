@@ -138,7 +138,8 @@ if selection == "**In evidenza**":
         render_review_tab(
             competition_page_data.loc[competition_page_data["Name"] == name_of_my_pizzeria],
             avg_eviews_rating_last_7_days,
-            avg_reviews_number_7_days
+            avg_reviews_number_7_days,
+            True
         )
 
     with tab_migliore:

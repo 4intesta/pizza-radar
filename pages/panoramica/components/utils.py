@@ -3,9 +3,7 @@ import pandas as pd
 import streamlit as st
 import numpy as np
 import altair as alt
-import calendar
 from datetime import datetime, timedelta
-from database.mock_data import reviews
 
 def value_to_color(n):
     if n <= 3:
@@ -750,7 +748,7 @@ def linechart_generator_4months(
 # -----------------------------
 # Tab generator
 # -----------------------------
-def render_review_tab(pizzeria, avg_eviews_rating_last_7_days, avg_reviews_number_7_days):
+def render_review_tab(pizzeria, avg_eviews_rating_last_7_days, avg_reviews_number_7_days, is_my_pizzeria: bool = False):
     rating_generale_value = round(pizzeria["Average Rating last 7 days"].iloc[0],2)
     rating_generale_diff = round(rating_generale_value - avg_eviews_rating_last_7_days, 1)
 
@@ -783,8 +781,7 @@ def render_review_tab(pizzeria, avg_eviews_rating_last_7_days, avg_reviews_numbe
     
     with col2:
         st.write("Recensioni recenti:")
-
-        for i, comment in enumerate(reviews):
+        for i, comment in enumerate(pizzeria['Reviews'].iloc[0]):
             label = comment["author"] + " (" + str(comment["date"]) + ") " + (comment["rating"] * ":material/star:") + " - " + comment["platform"]
             
             # Expand the first comment by default
@@ -797,7 +794,7 @@ def render_review_tab(pizzeria, avg_eviews_rating_last_7_days, avg_reviews_numbe
                 
                 # TAGS
                 missing_comment_warning = ""
-                if comment["ownerResponse"] is False:
+                if comment["ownerResponse"] is False and is_my_pizzeria:
                     missing_comment_warning = ":yellow-badge[:material/warning: Recensione senza tua risposta]"
 
                 # SUBRATING

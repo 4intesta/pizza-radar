@@ -3,6 +3,80 @@ import numpy as np
 import datetime as dt
 from dateutil.relativedelta import relativedelta
 import random
+import copy
+
+#Dummy reviews
+reviews = [
+    {
+        "author": "Luca B.",
+        "date": "2024-02-10",
+        "platform": "Google",
+        "rating": 5,
+        "text": "Pizza eccellente, servizio veloce e personale gentilissimo.",
+        "subratings": {
+            "cibo": 5,
+            "qualità-prezzo": 4,
+            "servizio": 5,
+            "ambiente": 4
+        },
+        "tags": ["pizza", "servizio impeccabile", "familiare"],
+        "ownerResponse": True
+    },
+    {
+        "author": "Sara M.",
+        "date": "2024-02-08",
+        "platform": "TripAdvisor",
+        "rating": 4,
+        "text": "Buona pizza, locale accogliente ma tempi di attesa un po' lunghi.",
+        "subratings": {
+            "cibo": 4,
+            "qualità-prezzo": 4,
+            "servizio": 3,
+            "ambiente": 5
+        },
+        "tags": ["accogliente", "attesa lunga"],
+        "ownerResponse": True
+    },
+    {
+        "author": "Marco R.",
+        "date": "2024-02-02",
+        "platform": "TheFork",
+        "rating": 3,
+        "text": "Qualità discreta ma rapporto qualità-prezzo migliorabile.",
+        "subratings": {
+            "cibo": 3,
+            "qualità-prezzo": 2,
+            "servizio": 4,
+            "ambiente": 3
+        },
+        "tags": ["qualità-prezzo", "moderato"],
+        "ownerResponse": True
+    },
+    {
+        "author": "Giulia P.",
+        "date": "2024-01-28",
+        "platform": "Google",
+        "rating": 5,
+        "subratings": {
+            "cibo": 5,
+            "qualità-prezzo": 5,
+            "servizio": 5,
+            "ambiente": 4
+        },
+        "tags": ["top", "consigliato", "pizza eccellente"],
+        "ownerResponse": False
+    },
+    {
+        "author": "Andrea V.",
+        "date": "2024-01-20",
+        "platform": "TripAdvisor",
+        "rating": 2,
+        "ownerResponse": False
+    }
+]
+
+
+
 
 np.random.seed(42)
 random.seed(42)
@@ -262,76 +336,7 @@ competition_page_data = build_competition_page_data(
     weekly_reviews, weekly_ratings
 )
 
-print("\nCompetition_page_data (with monthly data):")
-print(competition_page_data[["Name", "Last Year Monthly Reviews", "Last Year Monthly Ratings"]].head())
-
-
-######################################
-reviews = [
-    {
-        "author": "Luca B.",
-        "date": "2024-02-10",
-        "platform": "Google",
-        "rating": 5,
-        "text": "Pizza eccellente, servizio veloce e personale gentilissimo.",
-        "subratings": {
-            "cibo": 5,
-            "qualità-prezzo": 4,
-            "servizio": 5,
-            "ambiente": 4
-        },
-        "tags": ["pizza", "servizio impeccabile", "familiare"],
-        "ownerResponse": True
-    },
-    {
-        "author": "Sara M.",
-        "date": "2024-02-08",
-        "platform": "TripAdvisor",
-        "rating": 4,
-        "text": "Buona pizza, locale accogliente ma tempi di attesa un po' lunghi.",
-        "subratings": {
-            "cibo": 4,
-            "qualità-prezzo": 4,
-            "servizio": 3,
-            "ambiente": 5
-        },
-        "tags": ["accogliente", "attesa lunga"],
-        "ownerResponse": True
-    },
-    {
-        "author": "Marco R.",
-        "date": "2024-02-02",
-        "platform": "TheFork",
-        "rating": 3,
-        "text": "Qualità discreta ma rapporto qualità-prezzo migliorabile.",
-        "subratings": {
-            "cibo": 3,
-            "qualità-prezzo": 2,
-            "servizio": 4,
-            "ambiente": 3
-        },
-        "tags": ["qualità-prezzo", "moderato"],
-        "ownerResponse": True
-    },
-    {
-        "author": "Giulia P.",
-        "date": "2024-01-28",
-        "platform": "Google",
-        "rating": 5,
-        "subratings": {
-            "cibo": 5,
-            "qualità-prezzo": 5,
-            "servizio": 5,
-            "ambiente": 4
-        },
-        "tags": ["top", "consigliato", "pizza eccellente"],
-        "ownerResponse": False
-    },
-    {
-        "author": "Andrea V.",
-        "date": "2024-01-20",
-        "platform": "TripAdvisor",
-        "rating": 2,
-        "ownerResponse": False
-    }
-]
+# =========================================================
+# 10. ATTACH SAME REVIEWS TO EACH PIZZERIA
+# =========================================================
+competition_page_data["Reviews"] = [copy.deepcopy(reviews) for _ in names]
