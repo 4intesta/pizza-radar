@@ -296,7 +296,7 @@ def table_generator(competition_page_data: pd.DataFrame, toggle_on: bool = False
         ),
         "Name": st.column_config.TextColumn(
             "Pizzeria",
-            width="medium",
+            width="small",
             help="Nome della pizzeria"
         ),
         hot_topics_name: st.column_config.MultiselectColumn(
@@ -784,46 +784,47 @@ def render_review_tab(pizzeria, avg_eviews_rating_last_7_days, avg_reviews_numbe
     with col2:
         st.write("Recensioni recenti:")
 
-        for comment in reviews:
-            label=comment["author"]+" ("+str(comment["date"])+") "+(comment["rating"]*":material/star:")+" - "+comment["platform"]
-            with st.expander(label=label):
+        for i, comment in enumerate(reviews):
+            label = comment["author"] + " (" + str(comment["date"]) + ") " + (comment["rating"] * ":material/star:") + " - " + comment["platform"]
+            
+            # Expand the first comment by default
+            with st.expander(label=label, expanded=(i == 0)):
                 
-                #TESTO
+                # TESTO
                 text = comment.get("text") 
                 if text:
                     st.markdown(comment["text"])
                 
-                #TAGS
+                # TAGS
                 missing_comment_warning = ""
                 if comment["ownerResponse"] is False:
                     missing_comment_warning = ":yellow-badge[:material/warning: Recensione senza tua risposta]"
 
-                #SUBRATING
+                # SUBRATING
                 subratings_string = ""
                 subratings = comment.get("subratings", {})
-                for label, value in subratings.items():
-                    if label=="cibo":
-                        subratings_string = subratings_string +" "+f":grey-badge[:material/local_pizza: {label.capitalize()}"+f": {value}]"
-                    elif label=="qualità-prezzo":
-                        subratings_string = subratings_string +" "+f":grey-badge[:material/money_bag: {label.capitalize()}"+f": {value}]"
-                    elif label=="servizio":
-                        subratings_string = subratings_string +" "+f":grey-badge[:material/hand_meal: {label.capitalize()}"+f": {value}]"
-                    elif label=="ambiente":
-                        subratings_string = subratings_string +" "+f":grey-badge[:material/candle: {label.capitalize()}"+f": {value}]"
+                for label_sub, value in subratings.items():
+                    if label_sub == "cibo":
+                        subratings_string += f" :grey-badge[:material/local_pizza: {label_sub.capitalize()}: {value}]"
+                    elif label_sub == "qualità-prezzo":
+                        subratings_string += f" :grey-badge[:material/money_bag: {label_sub.capitalize()}: {value}]"
+                    elif label_sub == "servizio":
+                        subratings_string += f" :grey-badge[:material/hand_meal: {label_sub.capitalize()}: {value}]"
+                    elif label_sub == "ambiente":
+                        subratings_string += f" :grey-badge[:material/candle: {label_sub.capitalize()}: {value}]"
                 
-                #TAGS
+                # TAGS
                 tags_string = ""
                 tags = comment.get("tags", [])
-                for label in tags:
-                    tags_string = tags_string +" "+f":grey-badge[{label.capitalize()}]"
+                for label_tag in tags:
+                    tags_string += f" :grey-badge[{label_tag.capitalize()}]"
 
                 if text is None and subratings_string == "" and tags_string == "":
                     st.markdown("Questo commento è privo di contenuto")
                     if missing_comment_warning != "":
                         st.markdown(missing_comment_warning)
-
                 else:
-                    st.markdown((missing_comment_warning+" "+subratings_string+" "+tags_string).strip())
+                    st.markdown((missing_comment_warning + " " + subratings_string + " " + tags_string).strip())
                     
 def get_best_last_7d(competition_page_data: pd.DataFrame):
     competition_page_data["score"] = (
