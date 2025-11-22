@@ -100,7 +100,7 @@ if selection == "**Storico**":
 
     def update_historical_label():
         if st.session_state.historical_toggle_on:
-            st.session_state.historical_toggle_label = "Ultimo mese"
+            st.session_state.historical_toggle_label = "Ultimi 4 mesi"
         else:
             st.session_state.historical_toggle_label = "Ultimo anno"
 
