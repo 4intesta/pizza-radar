@@ -75,9 +75,6 @@ reviews = [
     }
 ]
 
-
-
-
 np.random.seed(42)
 random.seed(42)
 
@@ -340,3 +337,99 @@ competition_page_data = build_competition_page_data(
 # 10. ATTACH SAME REVIEWS TO EACH PIZZERIA
 # =========================================================
 competition_page_data["Reviews"] = [copy.deepcopy(reviews) for _ in names]
+
+# =========================================================
+# 11. ADD PRICES MAP TO EACH PIZZERIA
+# =========================================================
+def generate_price_list():
+    return {
+        "margherita": round(random.uniform(5.0, 10.0), 2),
+        "diavola": round(random.uniform(7.0, 13.0), 2),
+        "quattro stagioni": round(random.uniform(8.0, 14.0), 2),
+        "AVG_PRICE": round(random.uniform(8.0, 14.0), 2)
+    }
+
+competition_page_data["Prices"] = [generate_price_list() for _ in names]
+
+# =========================================================
+# 12. ADD NUMBER OF MENU ITEMS
+# =========================================================
+competition_page_data["Number of Menu Items"] = [
+    random.randint(20, 60) for _ in names
+]
+
+# =========================================================
+# 13. ADD AVERAGE STAY DURATION (IN MINUTES)
+# =========================================================
+competition_page_data["Average Stay Duration (min)"] = [
+    random.randint(40, 120) for _ in names
+]
+
+# =========================================================
+# 14. ADD MAXIMUM WAIT TIME (IN MINUTES)
+# =========================================================
+competition_page_data["Maximum Wait Time (min)"] = [
+    random.randint(5, 45) for _ in names
+]
+
+# =========================================================
+# 15. ADD RATING MAP
+# =========================================================
+def generate_rating_map():
+    return {
+        "GENERALE": round(random.uniform(1.0, 5.0), 2),
+        "CIBO": round(random.uniform(1.0, 5.0), 2),
+        "SERVIZIO": round(random.uniform(1.0, 5.0), 2),
+        "ATMOSFERA": round(random.uniform(1.0, 5.0), 2),
+        "QUALITÀ/PREZZO": round(random.uniform(1.0, 5.0), 2)
+    }
+
+competition_page_data["Rating"] = [generate_rating_map() for _ in names]
+
+# =========================================================
+# 16. ADD MONTHLY RATINGS FOR LAST YEAR (BY CATEGORY)
+# =========================================================
+
+import random
+import copy
+
+rating_categories = ["GENERALE", "CIBO", "SERVIZIO", "ATMOSFERA", "QUALITÀ/PREZZO"]
+
+def generate_monthly_category_ratings(months):
+    """
+    Creates a dict like:
+    {
+        'GENERALE': { '2024-01': 4.12, '2024-02': 3.98, ... },
+        'CIBO': { ... },
+        ...
+    }
+    """
+    monthly_map = {}
+    for cat in rating_categories:
+        monthly_map[cat] = {
+            month: round(random.uniform(1.0, 5.0), 2)
+            for month in months
+        }
+    return monthly_map
+
+competition_page_data["Monthly Category Ratings"] = [
+    generate_monthly_category_ratings(months_last_year) for _ in names
+]
+
+# =========================================================
+# 17. ADD PLATFORMS MAP
+# =========================================================
+
+platform_names = ["Google Maps", "TripAdvisor", "The Fork", "Deliveroo", "Glovo", "Just Eat"]
+
+def generate_platform_links(pizzeria_name):
+    platforms = {}
+    for platform in platform_names:
+        if random.random() < 0.6:  # ~60% chance the pizzeria is on this platform
+            # generate a fake URL
+            url_name = pizzeria_name.lower().replace(" ", "-")
+            platform_key = platform.lower().replace(" ", "")
+            platforms[platform] = f"https://www.{platform_key}.com/{url_name}"
+    return platforms
+
+competition_page_data["Platforms"] = [generate_platform_links(name) for name in names]
