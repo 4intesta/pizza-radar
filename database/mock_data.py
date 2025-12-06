@@ -5,7 +5,10 @@ from dateutil.relativedelta import relativedelta
 import random
 import copy
 
-#Dummy reviews
+# ---------------------------------------------------------
+# DUMMY REVIEWS
+# ---------------------------------------------------------
+
 reviews = [
     {
         "author": "Luca B.",
@@ -78,14 +81,15 @@ reviews = [
 np.random.seed(42)
 random.seed(42)
 
-# =========================================================
+# ---------------------------------------------------------
 # 1. BASIC SETTINGS
-# =========================================================
+# ---------------------------------------------------------
 
 def generate_base_settings(num_pizzerias=20):
     names = [f"Pizzeria {i}" for i in range(1, num_pizzerias + 1)]
     latitudes = np.random.uniform(45.468, 45.478, size=num_pizzerias)
     longitudes = np.random.uniform(9.182, 9.192, size=num_pizzerias)
+
     mean_prices = ["€", "€€", "€€€"] * (num_pizzerias // 3 + 1)
     mean_prices = mean_prices[:num_pizzerias]
 
@@ -94,9 +98,10 @@ def generate_base_settings(num_pizzerias=20):
 
     return names, latitudes, longitudes, mean_prices, today, dates_last_year
 
-# =========================================================
+
+# ---------------------------------------------------------
 # 2. BASE VALUES PER PIZZERIA
-# =========================================================
+# ---------------------------------------------------------
 
 def generate_base_values(names):
     base_values = {
@@ -106,17 +111,21 @@ def generate_base_values(names):
         }
         for name in names
     }
+
     for values in base_values.values():
         if values["reviews"] == 0:
             values["rating"] = 0.0
+
     return base_values
 
-# =========================================================
+
+# ---------------------------------------------------------
 # 3. DAILY DATA FOR LAST YEAR
-# =========================================================
+# ---------------------------------------------------------
 
 def generate_daily_last_year(names, dates_last_year, base_values):
     daily_data = {}
+
     for name in names:
         daily_data[name] = {}
         base_reviews = base_values[name]["reviews"]
@@ -124,14 +133,21 @@ def generate_daily_last_year(names, dates_last_year, base_values):
 
         for date in dates_last_year:
             reviews = max(0, int(np.random.normal(base_reviews, 2)))
-            rating = 0.0 if reviews == 0 else float(np.clip(np.random.normal(base_rating, 0.3), 1.0, 5.0))
-            daily_data[name][str(date)] = {"reviews": reviews, "rating": rating}
+            rating = 0.0 if reviews == 0 else float(
+                np.clip(np.random.normal(base_rating, 1), 1.0, 5.0)
+            )
+
+            daily_data[name][str(date)] = {
+                "reviews": reviews,
+                "rating": rating
+            }
 
     return daily_data
 
-# =========================================================
-# 4. TAGS + HOT TOPICS
-# =========================================================
+
+# ---------------------------------------------------------
+# 4. TAGS & HOT TOPICS
+# ---------------------------------------------------------
 
 def generate_tags():
     return [
@@ -149,53 +165,94 @@ def generate_tags():
         "Pizza creativa del mese"
     ]
 
+
 def generate_hot_topics(names, tags, today):
-    # Monthly topics
-    months_last_year = [(today - relativedelta(months=i)).strftime("%Y-%m") for i in range(11, -1, -1)]
-    hot_topics_month = {name: {month: {"rating": random.sample(tags, k=3)} for month in months_last_year} for name in names}
+    months_last_year = [
+        (today - relativedelta(months=i)).strftime("%Y-%m")
+        for i in range(11, -1, -1)
+    ]
 
-    # Weekly topics (52 weeks)
-    weeks_last_year = [(today - dt.timedelta(weeks=i)).strftime("%Y-W%W") for i in range(51, -1, -1)]
-    hot_topics_week = {name: {week: {"rating": random.sample(tags, k=random.randint(0,2))} for week in weeks_last_year} for name in names}
+    hot_topics_month = {
+        name: {
+            month: {"rating": random.sample(tags, k=3)}
+            for month in months_last_year
+        }
+        for name in names
+    }
 
-    # Last 30d / 7d topics
+    weeks_last_year = [
+        (today - dt.timedelta(weeks=i)).strftime("%Y-W%W")
+        for i in range(51, -1, -1)
+    ]
+
+    hot_topics_week = {
+        name: {
+            week: {"rating": random.sample(tags, k=random.randint(0,2))}
+            for week in weeks_last_year
+        }
+        for name in names
+    }
+
     hot_topics_last_30d = {name: random.sample(tags, k=3) for name in names}
-    hot_topics_last_7d = {name: random.sample(hot_topics_last_30d[name], k=random.randint(0,2)) for name in names}
+    hot_topics_last_7d = {
+        name: random.sample(hot_topics_last_30d[name], k=random.randint(0,2))
+        for name in names
+    }
 
-    return months_last_year, weeks_last_year, hot_topics_month, hot_topics_week, hot_topics_last_30d, hot_topics_last_7d
+    return (
+        months_last_year, weeks_last_year,
+        hot_topics_month, hot_topics_week,
+        hot_topics_last_30d, hot_topics_last_7d
+    )
 
-# =========================================================
-# 5. LAST 30 DAYS DATA MATRICES
-# =========================================================
+
+# ---------------------------------------------------------
+# 5. LAST 30 DAYS MATRICES
+# ---------------------------------------------------------
 
 def extract_last_30d_matrices(names, today, daily_data):
     last_30_days = [today - dt.timedelta(days=i) for i in range(29, -1, -1)]
     last_30_days_str = [str(d) for d in last_30_days]
 
-    reviews_30d = np.array([[daily_data[name][day]["reviews"] for day in last_30_days_str] for name in names])
-    ratings_30d = np.array([[daily_data[name][day]["rating"] for day in last_30_days_str] for name in names])
+    reviews_30d = np.array([
+        [daily_data[name][day]["reviews"] for day in last_30_days_str]
+        for name in names
+    ])
+
+    ratings_30d = np.array([
+        [daily_data[name][day]["rating"] for day in last_30_days_str]
+        for name in names
+    ])
 
     return reviews_30d, ratings_30d
 
-# =========================================================
-# 6. COMPUTE AGGREGATES
-# =========================================================
+
+# ---------------------------------------------------------
+# 6. AGGREGATES (7d, 30d)
+# ---------------------------------------------------------
 
 def compute_aggregates(reviews_30d, ratings_30d):
     reviews_7d = reviews_30d[:, -7:].sum(axis=1)
     reviews_30d_sum = reviews_30d.sum(axis=1)
 
     weighted_7d = (ratings_30d[:, -7:] * reviews_30d[:, -7:]).sum(axis=1)
-    ratings_7d = np.round(np.divide(weighted_7d, reviews_7d, out=np.zeros_like(weighted_7d), where=reviews_7d!=0), 2)
+    ratings_7d = np.round(
+        np.divide(weighted_7d, reviews_7d, out=np.zeros_like(weighted_7d), where=reviews_7d!=0),
+        2
+    )
 
     weighted_30d = (ratings_30d * reviews_30d).sum(axis=1)
-    ratings_30d_avg = np.round(np.divide(weighted_30d, reviews_30d_sum, out=np.zeros_like(weighted_30d), where=reviews_30d_sum!=0), 2)
+    ratings_30d_avg = np.round(
+        np.divide(weighted_30d, reviews_30d_sum, out=np.zeros_like(weighted_30d), where=reviews_30d_sum!=0),
+        2
+    )
 
     return reviews_7d, reviews_30d_sum, ratings_7d, ratings_30d_avg
 
-# =========================================================
-# 7. MONTHLY HISTORICAL DATA
-# =========================================================
+
+# ---------------------------------------------------------
+# 7. MONTHLY HISTORY
+# ---------------------------------------------------------
 
 def compute_monthly_history(names, today, daily_data):
     monthly_reviews = []
@@ -204,75 +261,136 @@ def compute_monthly_history(names, today, daily_data):
 
     for name in names:
         p_data = daily_data[name]
-        reviews_per_month = []
-        ratings_per_month = []
+        revs_per_month = []
+        rats_per_month = []
 
-        for i in range(num_months - 1, -1, -1):
-            month_start = (today - relativedelta(months=i)).replace(day=1)
-            next_month_start = month_start + relativedelta(months=1)
-            days_in_month = [d for d in p_data.keys() if month_start <= dt.date.fromisoformat(d) < next_month_start]
+        for i in range(num_months):
+            month_start = (today - relativedelta(months=11-i)).replace(day=1)
+            month_end = month_start + relativedelta(months=1)
 
-            if days_in_month:
-                revs = [p_data[d]["reviews"] for d in days_in_month]
-                rats = [p_data[d]["rating"] for d in days_in_month if p_data[d]["reviews"] > 0]
-                reviews_per_month.append(int(np.sum(revs)))
-                ratings_per_month.append(float(np.round(np.mean(rats), 2)) if rats else np.nan)
+            days = [
+                d for d in p_data.keys()
+                if month_start <= dt.date.fromisoformat(d) < month_end
+            ]
+
+            if days:
+                r = [p_data[d]["reviews"] for d in days]
+                ra = [p_data[d]["rating"] for d in days if p_data[d]["reviews"] > 0]
+                revs_per_month.append(int(np.sum(r)))
+                rats_per_month.append(float(np.round(np.mean(ra), 2)) if ra else np.nan)
             else:
-                reviews_per_month.append(0)
-                ratings_per_month.append(np.nan)
+                revs_per_month.append(0)
+                rats_per_month.append(np.nan)
 
-        monthly_reviews.append(reviews_per_month)
-        monthly_ratings.append(ratings_per_month)
+        monthly_reviews.append(revs_per_month)
+        monthly_ratings.append(rats_per_month)
 
     return monthly_reviews, monthly_ratings
 
-# =========================================================
-# 7.bis WEEKLY HISTORICAL DATA
-# =========================================================
+
+# ---------------------------------------------------------
+# 7.b WEEKLY HISTORY
+# ---------------------------------------------------------
 
 def compute_weekly_history(names, today, daily_data):
     weekly_reviews = []
     weekly_ratings = []
-    num_weeks = 52
 
     for name in names:
         p_data = daily_data[name]
-        reviews_per_week = []
-        ratings_per_week = []
+        revs_per_week = []
+        rats_per_week = []
 
-        for i in range(num_weeks - 1, -1, -1):
-            week_start = today - dt.timedelta(weeks=i)
-            week_start = week_start - dt.timedelta(days=week_start.weekday())  # Monday
+        for i in range(52):
+            week_start = today - dt.timedelta(weeks=51-i)
+            week_start = week_start - dt.timedelta(days=week_start.weekday())
             week_end = week_start + dt.timedelta(days=7)
 
-            days_in_week = [d for d in p_data.keys() if week_start <= dt.date.fromisoformat(d) < week_end]
+            days = [
+                d for d in p_data.keys()
+                if week_start <= dt.date.fromisoformat(d) < week_end
+            ]
 
-            if days_in_week:
-                revs = [p_data[d]["reviews"] for d in days_in_week]
-                rats = [p_data[d]["rating"] for d in days_in_week if p_data[d]["reviews"] > 0]
-                reviews_per_week.append(int(np.sum(revs)))
-                ratings_per_week.append(float(np.round(np.mean(rats), 2)) if rats else np.nan)
+            if days:
+                r = [p_data[d]["reviews"] for d in days]
+                ra = [p_data[d]["rating"] for d in days if p_data[d]["reviews"] > 0]
+                revs_per_week.append(int(np.sum(r)))
+                rats_per_week.append(float(np.round(np.mean(ra), 2)) if ra else np.nan)
             else:
-                reviews_per_week.append(0)
-                ratings_per_week.append(np.nan)
+                revs_per_week.append(0)
+                rats_per_week.append(np.nan)
 
-        weekly_reviews.append(reviews_per_week)
-        weekly_ratings.append(ratings_per_week)
+        weekly_reviews.append(revs_per_week)
+        weekly_ratings.append(rats_per_week)
 
     return weekly_reviews, weekly_ratings
 
-# =========================================================
+
+# ---------------------------------------------------------
+# NEW FEATURE
+#  ➤ MONTHLY REVIEW COUNTS + SPLIT ABOVE/BELOW 3 STARS
+# ---------------------------------------------------------
+
+def compute_monthly_review_counts(names, today, daily_data):
+    results = {}
+
+    months = [
+        (today - relativedelta(months=i)).strftime("%Y-%m")
+        for i in range(11, -1, -1)
+    ]
+
+    for name in names:
+        p_data = daily_data[name]
+        monthly_map = {}
+
+        for i in range(11, -1, -1):
+            month = (today - relativedelta(months=i)).strftime("%Y-%m")
+            ms = (today - relativedelta(months=i)).replace(day=1)
+            me = ms + relativedelta(months=1)
+
+            days = [
+                d for d in p_data.keys()
+                if ms <= dt.date.fromisoformat(d) < me
+            ]
+
+            total = 0
+            above3 = 0
+            below_or_eq3 = 0
+
+            for d in days:
+                count = p_data[d]["reviews"]
+                rating = p_data[d]["rating"]
+
+                total += count
+                if count > 0:
+                    if rating > 3:
+                        above3 += count
+                    else:
+                        below_or_eq3 += count
+
+            monthly_map[month] = {
+                "total": total,
+                "above3": above3,
+                "below_or_eq3": below_or_eq3
+            }
+
+        results[name] = monthly_map
+
+    return results
+
+
+# ---------------------------------------------------------
 # 8. BUILD FINAL DATAFRAME
-# =========================================================
+# ---------------------------------------------------------
 
 def build_competition_page_data(
     names, latitudes, longitudes, mean_prices,
-    reviews_30d, ratings_30d, reviews_7d, reviews_30d_sum, ratings_7d, ratings_30d_avg,
-    months_last_year, hot_topics_month, weeks_last_year, hot_topics_week,
-    hot_topics_last_30d, hot_topics_last_7d,
-    monthly_reviews, monthly_ratings,
-    weekly_reviews, weekly_ratings
+    reviews_30d, ratings_30d, reviews_7d, reviews_30d_sum,
+    ratings_7d, ratings_30d_avg, months_last_year, hot_topics_month,
+    weeks_last_year, hot_topics_week, hot_topics_last_30d, hot_topics_last_7d,
+    monthly_reviews, monthly_ratings, weekly_reviews, weekly_ratings
 ):
+
     df = pd.DataFrame({
         "Name": names,
         "Latitude": latitudes,
@@ -287,7 +405,7 @@ def build_competition_page_data(
         "Last Year Monthly Reviews": monthly_reviews,
         "Last Year Monthly Ratings": monthly_ratings,
         "Last Year Weekly Reviews": weekly_reviews,
-        "Last Year Weekly Ratings": weekly_ratings
+        "Last Year Weekly Ratings": weekly_ratings,
     })
 
     # Monthly tags
@@ -298,49 +416,55 @@ def build_competition_page_data(
     for week in weeks_last_year:
         df[f"Tags {week}"] = [hot_topics_week[name][week]["rating"] for name in names]
 
-    # Weekly topics
     df["hot_topics_week"] = df["Name"].map(hot_topics_week)
-
-    # Last 30d / 7d topics
     df["hot_topics_last_30d"] = df["Name"].map(hot_topics_last_30d)
     df["hot_topics_last_7d"] = df["Name"].map(hot_topics_last_7d)
 
     return df
 
-# =========================================================
-# 9. EXECUTE EVERYTHING
-# =========================================================
+
+# ---------------------------------------------------------
+# 9. EXECUTION PIPELINE
+# ---------------------------------------------------------
 
 names, latitudes, longitudes, mean_prices, today, dates_last_year = generate_base_settings()
 base_values = generate_base_values(names)
 daily_data_last_year = generate_daily_last_year(names, dates_last_year, base_values)
 
 tags = generate_tags()
-months_last_year, weeks_last_year, hot_topics_month, hot_topics_week, hot_topics_last_30d, hot_topics_last_7d = generate_hot_topics(names, tags, today)
+(
+    months_last_year, weeks_last_year,
+    hot_topics_month, hot_topics_week,
+    hot_topics_last_30d, hot_topics_last_7d
+) = generate_hot_topics(names, tags, today)
 
 reviews_30d, ratings_30d = extract_last_30d_matrices(names, today, daily_data_last_year)
-reviews_7d, reviews_30d_sum, ratings_7d, ratings_30d_avg = compute_aggregates(reviews_30d, ratings_30d)
+reviews_7d, reviews_30d_sum, ratings_7d, ratings_30d_avg = compute_aggregates(
+    reviews_30d, ratings_30d
+)
 
 monthly_reviews, monthly_ratings = compute_monthly_history(names, today, daily_data_last_year)
 weekly_reviews, weekly_ratings = compute_weekly_history(names, today, daily_data_last_year)
 
+# NEW METRIC
+monthly_review_counts = compute_monthly_review_counts(names, today, daily_data_last_year)
+
 competition_page_data = build_competition_page_data(
     names, latitudes, longitudes, mean_prices,
-    reviews_30d, ratings_30d, reviews_7d, reviews_30d_sum, ratings_7d, ratings_30d_avg,
-    months_last_year, hot_topics_month, weeks_last_year, hot_topics_week,
-    hot_topics_last_30d, hot_topics_last_7d,
-    monthly_reviews, monthly_ratings,
-    weekly_reviews, weekly_ratings
+    reviews_30d, ratings_30d, reviews_7d, reviews_30d_sum,
+    ratings_7d, ratings_30d_avg, months_last_year, hot_topics_month,
+    weeks_last_year, hot_topics_week, hot_topics_last_30d, hot_topics_last_7d,
+    monthly_reviews, monthly_ratings, weekly_reviews, weekly_ratings
 )
 
-# =========================================================
-# 10. ATTACH SAME REVIEWS TO EACH PIZZERIA
-# =========================================================
+# Add reviews to each pizzeria
 competition_page_data["Reviews"] = [copy.deepcopy(reviews) for _ in names]
 
-# =========================================================
-# 11. ADD PRICES MAP TO EACH PIZZERIA
-# =========================================================
+
+# ---------------------------------------------------------
+# 10. ADD PRICES
+# ---------------------------------------------------------
+
 def generate_price_list():
     return {
         "margherita": round(random.uniform(5.0, 10.0), 2),
@@ -351,30 +475,24 @@ def generate_price_list():
 
 competition_page_data["Prices"] = [generate_price_list() for _ in names]
 
-# =========================================================
-# 12. ADD NUMBER OF MENU ITEMS
-# =========================================================
-competition_page_data["Number of Menu Items"] = [
-    random.randint(20, 60) for _ in names
-]
 
-# =========================================================
-# 13. ADD AVERAGE STAY DURATION (IN MINUTES)
-# =========================================================
-competition_page_data["Average Stay Duration (min)"] = [
-    random.randint(40, 120) for _ in names
-]
+# ---------------------------------------------------------
+# 11. ADD EXTRA FEATURES
+# ---------------------------------------------------------
 
-# =========================================================
-# 14. ADD MAXIMUM WAIT TIME (IN MINUTES)
-# =========================================================
+competition_page_data["Number of Menu Items"] = [random.randint(20, 60) for _ in names]
+competition_page_data["Average Stay Duration (hours)"] = [
+    round(random.uniform(0.67, 2.0), 2) for _ in names
+]
 competition_page_data["Maximum Wait Time (min)"] = [
     random.randint(5, 45) for _ in names
 ]
 
-# =========================================================
-# 15. ADD RATING MAP
-# =========================================================
+
+# ---------------------------------------------------------
+# 12. ADD RATING MAP
+# ---------------------------------------------------------
+
 def generate_rating_map():
     return {
         "GENERALE": round(random.uniform(1.0, 5.0), 2),
@@ -386,50 +504,70 @@ def generate_rating_map():
 
 competition_page_data["Rating"] = [generate_rating_map() for _ in names]
 
-# =========================================================
-# 16. ADD MONTHLY RATINGS FOR LAST YEAR (BY CATEGORY)
-# =========================================================
 
-import random
-import copy
+# ---------------------------------------------------------
+# 13. MONTHLY CATEGORY RATINGS
+# ---------------------------------------------------------
 
 rating_categories = ["GENERALE", "CIBO", "SERVIZIO", "ATMOSFERA", "QUALITÀ/PREZZO"]
 
 def generate_monthly_category_ratings(months):
-    """
-    Creates a dict like:
-    {
-        'GENERALE': { '2024-01': 4.12, '2024-02': 3.98, ... },
-        'CIBO': { ... },
-        ...
+    return {
+        cat: {month: round(random.uniform(1.0, 5.0), 2) for month in months}
+        for cat in rating_categories
     }
-    """
-    monthly_map = {}
-    for cat in rating_categories:
-        monthly_map[cat] = {
-            month: round(random.uniform(1.0, 5.0), 2)
-            for month in months
-        }
-    return monthly_map
 
 competition_page_data["Monthly Category Ratings"] = [
-    generate_monthly_category_ratings(months_last_year) for _ in names
+    generate_monthly_category_ratings(months_last_year)
+    for _ in names
 ]
 
-# =========================================================
-# 17. ADD PLATFORMS MAP
-# =========================================================
+
+# ---------------------------------------------------------
+# 14. ADD PLATFORMS
+# ---------------------------------------------------------
 
 platform_names = ["Google Maps", "TripAdvisor", "The Fork", "Deliveroo", "Glovo", "Just Eat"]
 
 def generate_platform_links(pizzeria_name):
     platforms = {}
     for platform in platform_names:
-        if random.random() < 0.6:  # ~60% chance the pizzeria is on this platform
-            # generate a fake URL
+        if random.random() < 0.6:
             url_name = pizzeria_name.lower().replace(" ", "-")
             platform_key = platform.lower().replace(" ", "")
             platforms[platform] = f"https://www.{platform_key}.com/{url_name}"
     return platforms
 
-competition_page_data["Platforms"] = [generate_platform_links(name) for name in names]
+competition_page_data["Platforms"] = [
+    generate_platform_links(name) for name in names
+]
+
+
+# ---------------------------------------------------------
+# 15. ADD NEW METRIC COLUMN
+# ---------------------------------------------------------
+
+competition_page_data["Monthly Review Counts"] = [
+    monthly_review_counts[name] for name in names
+]
+
+
+# =========================================================
+# 16. ADD MONTHLY REVIEWS PER PLATFORM (MOCKED)
+# =========================================================
+
+platform_names = ["Google Maps", "TripAdvisor", "The Fork", "Deliveroo", "Glovo", "Just Eat"]
+
+def generate_monthly_reviews_by_platform(months, platforms):
+    data = {}
+    for platform in platforms:
+        data[platform] = {
+            month: int(np.random.poisson(lam=np.random.randint(1, 10)))
+            for month in months
+        }
+    return data
+
+competition_page_data["Monthly Reviews by Platform"] = [
+    generate_monthly_reviews_by_platform(months_last_year, platform_names)
+    for _ in names
+]

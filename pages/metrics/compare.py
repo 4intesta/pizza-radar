@@ -13,7 +13,6 @@ competition_page_data = computation_of_historical_gradimento(competition_page_da
 name_of_my_pizzeria = "Pizzeria 4"
 
 st.subheader("Confronta la tua Pizzeria con altre in zona")
-st.write("Scegli una pizzeria in zona e scopri la sua performance rispetto alla tua:")
 
 # Store selectbox value in a variable
 selected_pizzeria = st.selectbox(
