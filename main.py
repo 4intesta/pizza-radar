@@ -1,4 +1,5 @@
 import streamlit as st
+import database.queries as db_mapper
 
 # ---------------------------------------
 # Page Definitions
@@ -42,3 +43,4 @@ else:
         "Altro": [p6, p5]
         }, position="top")
     pg.run()
+    db_mapper.read_client_and_competitors()
